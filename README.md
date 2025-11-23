@@ -7,6 +7,7 @@
   <p>
     <a href="#vision">Vision</a> • 
     <a href="#features">Features</a> • 
+    <a href="#installation">Installation</a> • 
     <a href="#architecture">Architecture</a> • 
     <a href="#tech-stack">Tech Stack</a>
   </p>
@@ -45,6 +46,47 @@ Tools for the volunteers who run the event.
 *   **Offline Maps:** Vector-based maps for navigation without internet.
 *   **Event Schedule:** Personal agendas for workshops, music, and art.
 *   **Search:** Find camps, art pieces, and friends.
+
+## Installation
+
+Follow these steps to get **1000 Fires** running on your local desktop machine for development or testing.
+
+### Prerequisites
+Before you begin, ensure you have the following installed on your computer:
+1.  **Node.js** (Version 18 or higher) - [Download Here](https://nodejs.org/)
+2.  **Git** - [Download Here](https://git-scm.com/)
+3.  A code editor like **VS Code** - [Download Here](https://code.visualstudio.com/)
+
+### Step-by-Step Guide
+
+1.  **Open your Terminal** (Command Prompt on Windows, Terminal on Mac/Linux).
+
+2.  **Clone the Repository**
+    Copy the project files from GitHub to your local machine.
+    ```bash
+    git clone https://github.com/Northloop/1000_Fires.git
+    ```
+
+3.  **Navigate to the Project Folder**
+    ```bash
+    cd 1000_Fires
+    ```
+
+4.  **Install Dependencies**
+    This downloads all the necessary libraries (React, Tailwind, etc.) required to run the app.
+    ```bash
+    npm install
+    ```
+
+5.  **Run the Application**
+    Start the local development server.
+    ```bash
+    npm run dev
+    ```
+    *Note: If `npm run dev` does not work, try `npm start`.*
+
+6.  **View in Browser**
+    The terminal will show a local URL (usually `http://localhost:3000` or `http://localhost:5173`). Open that link in your web browser to use the app.
 
 ## Architecture
 
