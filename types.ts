@@ -37,6 +37,24 @@ export interface Camp {
   moopScore?: number; // 1-100 (100 is perfect)
 }
 
+export interface CampMember {
+  id: string;
+  name: string;
+  role: 'LEAD' | 'MEMBER' | 'NEWBIE';
+  campTeam: 'BUILD' | 'KITCHEN' | 'STRIKE' | 'GENERAL';
+  status: 'CONFIRMED' | 'ARRIVED' | 'PENDING';
+  email: string;
+}
+
+export interface CampAsset {
+  id: string;
+  name: string;
+  category: 'INFRASTRUCTURE' | 'KITCHEN' | 'POWER' | 'SOUND';
+  condition: 'GOOD' | 'DAMAGED' | 'MISSING';
+  assignedTo?: string; // Member Name
+  value: number;
+}
+
 export interface EventItem {
   id: string;
   title: string;

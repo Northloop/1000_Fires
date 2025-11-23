@@ -1,5 +1,5 @@
 
-import { Camp, EventItem, Shift, Task, User, UserRole, Transaction, Incident, Department, LNTTask, MapLayer, MapPin } from "./types";
+import { Camp, EventItem, Shift, Task, User, UserRole, Transaction, Incident, Department, LNTTask, MapLayer, MapPin, CampMember, CampAsset } from "./types";
 
 // Removed hardcoded CURRENT_USER in favor of dynamic context
 
@@ -42,6 +42,21 @@ export const MOCK_CAMPS: Camp[] = [
   { id: 'c3', name: 'The Library', description: 'Shhh. Just kidding, we have karaoke.', location: '3:00 & C', members: 20, budgetSpent: 800, budgetTotal: 2000, moopScore: 60 },
 ];
 
+export const MOCK_CAMP_MEMBERS: CampMember[] = [
+  { id: 'm1', name: 'Alex "Sparky" Miller', role: 'LEAD', campTeam: 'GENERAL', status: 'ARRIVED', email: 'sparky@example.com' },
+  { id: 'm2', name: 'Sarah Jenkins', role: 'MEMBER', campTeam: 'KITCHEN', status: 'ARRIVED', email: 'sarah@example.com' },
+  { id: 'm3', name: 'Mike Ross', role: 'MEMBER', campTeam: 'BUILD', status: 'CONFIRMED', email: 'mike@example.com' },
+  { id: 'm4', name: 'Jessica Pearson', role: 'MEMBER', campTeam: 'STRIKE', status: 'PENDING', email: 'jessica@example.com' },
+  { id: 'm5', name: 'Louis Litt', role: 'NEWBIE', campTeam: 'GENERAL', status: 'CONFIRMED', email: 'louis@example.com' },
+];
+
+export const MOCK_CAMP_ASSETS: CampAsset[] = [
+  { id: 'a1', name: 'Honda 2000i Generator', category: 'POWER', condition: 'GOOD', value: 1200, assignedTo: 'Mike Ross' },
+  { id: 'a2', name: 'Shade Structure (30x30)', category: 'INFRASTRUCTURE', condition: 'GOOD', value: 2500 },
+  { id: 'a3', name: 'Propane Stove (3-Burner)', category: 'KITCHEN', condition: 'DAMAGED', value: 150, assignedTo: 'Sarah Jenkins' },
+  { id: 'a4', name: 'JBL Sound System', category: 'SOUND', condition: 'GOOD', value: 800 },
+];
+
 export const MOCK_EVENTS: EventItem[] = [
   { id: 'e1', title: 'Sunset Yoga', host: 'Camp Serenity', startTime: '2026-10-02T18:00:00', location: 'Temple Grounds', type: 'WORKSHOP' },
   { id: 'e2', title: 'Midnight Poutine', host: 'Camp Maple', startTime: '2026-10-02T23:59:00', location: '4:30 & B', type: 'FOOD' },
@@ -61,6 +76,9 @@ export const MOCK_SHIFTS: Shift[] = [
   { id: 's2', departmentId: 'd1', role: 'Ranger (Patrol)', time: 'Thu 09:00 AM - 12:00 PM', filled: false, requiredSkills: ['CPR'] },
   { id: 's3', departmentId: 'd2', role: 'Gate Perimeter', time: 'Thu 08:00 PM - 12:00 AM', filled: true, volunteerName: 'Dave' },
   { id: 's4', departmentId: 'd3', role: 'Medical Triage', time: 'Sat 08:00 PM - 12:00 AM', filled: false, requiredSkills: ['EMT'] },
+  { id: 's5', departmentId: 'd1', role: 'Ranger (Patrol)', time: 'Fri 02:00 PM - 06:00 PM', filled: false, requiredSkills: ['CPR'] },
+  { id: 's6', departmentId: 'd2', role: 'Greeter', time: 'Wed 10:00 AM - 02:00 PM', filled: false },
+  { id: 's7', departmentId: 'd4', role: 'Power Grid Check', time: 'Thu 01:00 PM - 04:00 PM', filled: true, volunteerName: 'Sledge' },
 ];
 
 export const MOCK_TRANSACTIONS: Transaction[] = [

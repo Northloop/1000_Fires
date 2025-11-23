@@ -11,6 +11,7 @@ import DepartmentDashboard from './components/DepartmentDashboard';
 import LoginScreen from './components/LoginScreen';
 import ProfileSettings from './components/ProfileSettings';
 import MapBuilder from './components/MapBuilder';
+import VolunteerPortal from './components/VolunteerPortal';
 import { UserProvider, useUser } from './context/UserContext';
 
 // Protected Route Wrapper
@@ -36,6 +37,7 @@ const AppRoutes: React.FC = () => {
           <Route path="schedule" element={<Schedule />} />
           <Route path="safety" element={<SafetyModule />} />
           <Route path="department" element={<DepartmentDashboard />} />
+          <Route path="volunteer" element={<VolunteerPortal />} />
           <Route path="profile" element={<ProfileSettings />} />
         </Route>
       </Routes>

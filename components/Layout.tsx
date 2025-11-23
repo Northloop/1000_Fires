@@ -16,7 +16,8 @@ import {
   WifiOff,
   RefreshCw,
   AlertTriangle,
-  Shield
+  Shield,
+  HeartHandshake
 } from 'lucide-react';
 import { useOfflineSync } from '../lib/offline';
 import { UserRole } from '../types';
@@ -36,12 +37,18 @@ const Layout: React.FC = () => {
     { to: '/camp', label: 'My Camp', icon: Tent },
     { to: '/map', label: 'Map', icon: MapIcon },
     { to: '/schedule', label: 'Schedule', icon: Calendar },
+    { to: '/volunteer', label: 'Volunteer Portal', icon: HeartHandshake },
     { to: '/safety', label: 'Safety & SOS', icon: Shield },
   ];
 
   // Logic to show Department link for Leads/Organizers
   if ([UserRole.DEPARTMENT_LEAD, UserRole.EVENT_ORGANIZER].includes(user.role)) {
      navItems.push({ to: '/department', label: 'Department HQ', icon: Users });
+  }
+
+  // Logic to show Map Builder for Organizers
+  if (user.role === UserRole.EVENT_ORGANIZER) {
+     navItems.push({ to: '/map-builder', label: 'Map Builder', icon: MapIcon });
   }
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
