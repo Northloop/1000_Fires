@@ -36,6 +36,40 @@ The current codebase is a **UI Shell**. It demonstrates *intent* and *user flow*
 
 ## 2. Technical Architecture & Data Design (Section 6.7)
 
+### Data Strategy: Hybrid Architecture (Structured Core + Dynamic Shell)
+
+To accommodate the management requirement for "generic object blocks" and dynamic forms (Camp Applications, Art Grants, LNT Checklists) while maintaining system stability, we will adopt a **Hybrid Relational + JSONB** architecture.
+
+#### 1. The Core (Relational / Structured)
+**Critical operational data must use strict Relational Tables with Foreign Keys.**
+*   **Entities:** Users, Auth, Payments, Shifts, Permissions, Incidents.
+*   **Why:** We need strict referential integrity. (e.g., You cannot assign a Shift to a User that doesn't exist). We need high-performance joins for security checks (RBAC).
+
+#### 2. The Shell (Dynamic / JSONB)
+**User-defined forms and content will use PostgreSQL JSONB columns.**
+*   **Entities:** Camp Application Forms, Art Project Details, LNT Checklists, Post-Event Reports.
+*   **Why:** These schemas change every year. Hardcoding columns (`camp_has_generator_bool`) leads to schema migration hell.
+*   **Implementation:** A `CampApplication` table will have a `form_data` JSONB column. Organizers can define "Blocks" (Text, Checkbox, Repeater) in the admin UI, which saves as a JSON schema.
+
+### Architecture Decision Record: Hybrid vs. EAV (Entity-Attribute-Value)
+
+**Context:** Management suggested using a "Generic Object Block" system (EAV) with stored procedures for the entire app, similar to Fulcrum/Salesforce.
+
+**Decision:** We will **REJECT** a pure EAV model in favor of the **Hybrid Architecture**.
+
+**Trade-Off Analysis:**
+
+| Feature | Pure EAV (The "Fulcrum" Model) | Hybrid (Postgres JSONB) | Winner |
+| :--- | :--- | :--- | :--- |
+| **Performance** | **Poor.** Requires massive `JOIN` operations to reconstruct a single record (Entity -> Attribute -> Value). Querying "All users who paid dues" is slow. | **Excellent.** Critical data is indexed. JSONB queries allow fast lookups inside documents. | **Hybrid** |
+| **Data Integrity** | **Low.** Everything is a string. Easy to accidentally put "Banana" in a Date field without complex constraints. | **High.** Relational core enforces types (Money, Date, ID). Dynamic shell is flexible but isolated. | **Hybrid** |
+| **Maintainability** | **Low.** Logic often hides in Stored Procedures ("Stored Procedure Hell"). Hard to debug, version control, or test. | **High.** Logic lives in API code (Node.js). Easy to unit test and deploy. | **Hybrid** |
+| **Flexibility** | **High.** Users can change *everything* on the fly. | **High.** Users can change Forms/Apps on the fly, but Core Auth/Payments remain stable. | **Tie** |
+
+**Conclusion:** The Hybrid approach satisfies the boss's desire for "dynamic forms and repeatable sections" via JSONB, without introducing the technical debt and performance risks of a pure EAV system.
+
+---
+
 ### Q1: Multi-Role User Management
 *   **Problem:** User is a Camp Lead, a Ranger, and an Artist simultaneously.
 *   **Architecture Solution:**

@@ -1,11 +1,12 @@
-
 import React, { useState } from 'react';
 import { Calendar, Filter, CheckCircle2, Clock, MapPin, Search } from 'lucide-react';
 import { MOCK_SHIFTS, MOCK_DEPARTMENTS } from '../constants';
 import { useUser } from '../context/UserContext';
+import { useNavigate } from 'react-router-dom';
 
 const VolunteerPortal: React.FC = () => {
   const { user } = useUser();
+  const navigate = useNavigate();
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
   const [activeTab, setActiveTab] = useState<'browse' | 'my-shifts'>('browse');
 
