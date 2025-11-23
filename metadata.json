@@ -1,0 +1,7 @@
+{
+  "name": "1000 Fires",
+  "description": "The all-in-one operating system for participatory events, combining organizer tools, camp management, and participant discovery.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
