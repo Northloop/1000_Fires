@@ -45,24 +45,50 @@ export const MOCK_USERS: User[] = [
     ]
   },
   {
-    id: 'u4',
-    name: 'Volunteer Val',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Val',
+    id: 'u_doc',
+    name: 'Doc Holliday',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Doc',
     memberships: [
       {
-        id: 'm4', entityId: 'e1', entityName: 'MN Regional Burn', entityType: 'EVENT', role: UserRole.VOLUNTEER,
-        permissions: ['VIEW_DASHBOARD']
+        id: 'm_doc', entityId: 'd3', entityName: 'ESD (Medical)', entityType: 'DEPARTMENT', role: UserRole.DEPARTMENT_LEAD,
+        permissions: ['VIEW_DASHBOARD', 'VIEW_VOLUNTEER_DATA', 'MANAGE_DEPARTMENT_SHIFTS', 'ACCESS_SAFETY_DASHBOARD']
       }
     ]
   },
   {
-    id: 'u5',
-    name: 'Newbie Ned',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ned',
+    id: 'u_dusty',
+    name: 'Dusty Roads',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dusty',
     memberships: [
-       {
-        id: 'm5', entityId: 'e1', entityName: 'MN Regional Burn', entityType: 'EVENT', role: UserRole.PARTICIPANT,
+      {
+        id: 'm_dusty', entityId: 'd2', entityName: 'Gate & Perimeter', entityType: 'DEPARTMENT', role: UserRole.DEPARTMENT_LEAD,
+        permissions: ['VIEW_DASHBOARD', 'VIEW_VOLUNTEER_DATA', 'MANAGE_DEPARTMENT_SHIFTS']
+      }
+    ]
+  },
+  {
+    id: 'u_sledge',
+    name: 'Sledge',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sledge',
+    memberships: [
+      {
+        id: 'm_sledge', entityId: 'd4', entityName: 'Site Ops (DPW)', entityType: 'DEPARTMENT', role: UserRole.DEPARTMENT_LEAD,
+        permissions: ['VIEW_DASHBOARD', 'VIEW_VOLUNTEER_DATA', 'MANAGE_DEPARTMENT_SHIFTS', 'ACCESS_SAFETY_DASHBOARD']
+      }
+    ]
+  },
+  {
+    id: 'u_medic_mike',
+    name: 'Medic Mike',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mike',
+    memberships: [
+      {
+        id: 'm_medic_1', entityId: 'e1', entityName: 'MN Regional Burn', entityType: 'EVENT', role: UserRole.PARTICIPANT,
         permissions: ['VIEW_DASHBOARD']
+      },
+      {
+        id: 'm_medic_2', entityId: 'd3', entityName: 'ESD (Medical)', entityType: 'DEPARTMENT', role: UserRole.VOLUNTEER,
+        permissions: ['VIEW_DASHBOARD', 'ACCESS_SAFETY_DASHBOARD']
       }
     ]
   }
@@ -114,10 +140,11 @@ export const MOCK_SHIFTS: Shift[] = [
   { id: 's1', departmentId: 'd1', role: 'Ranger (Shift Lead)', time: 'Wed 12:00 PM - 4:00 PM', filled: true, volunteerName: 'Sarah', requiredSkills: ['Conflict Resolution'] },
   { id: 's2', departmentId: 'd1', role: 'Ranger (Patrol)', time: 'Thu 09:00 AM - 12:00 PM', filled: false, requiredSkills: ['CPR'] },
   { id: 's3', departmentId: 'd2', role: 'Gate Perimeter', time: 'Thu 08:00 PM - 12:00 AM', filled: true, volunteerName: 'Dave' },
-  { id: 's4', departmentId: 'd3', role: 'Medical Triage', time: 'Sat 08:00 PM - 12:00 AM', filled: false, requiredSkills: ['EMT'] },
+  { id: 's4', departmentId: 'd3', role: 'Medical Triage', time: 'Sat 08:00 PM - 12:00 AM', filled: true, volunteerName: 'Medic Mike', requiredSkills: ['EMT'] },
   { id: 's5', departmentId: 'd1', role: 'Ranger (Patrol)', time: 'Fri 02:00 PM - 06:00 PM', filled: false, requiredSkills: ['CPR'] },
   { id: 's6', departmentId: 'd2', role: 'Greeter', time: 'Wed 10:00 AM - 02:00 PM', filled: false },
   { id: 's7', departmentId: 'd4', role: 'Power Grid Check', time: 'Thu 01:00 PM - 04:00 PM', filled: true, volunteerName: 'Sledge' },
+  { id: 's8', departmentId: 'd3', role: 'Hydration Station', time: 'Sat 02:00 PM - 06:00 PM', filled: true, volunteerName: 'Medic Mike' },
 ];
 
 export const MOCK_TRANSACTIONS: Transaction[] = [
@@ -134,10 +161,37 @@ export const MOCK_INCIDENTS: Incident[] = [
 ];
 
 export const MOCK_DEPARTMENTS: Department[] = [
-  { id: 'd1', name: 'Event Rangers', lead: 'Top Hat', volunteerCount: 450, shiftFillRate: 85, icon: 'Shield' },
-  { id: 'd2', name: 'Gate & Perimeter', lead: 'Dusty', volunteerCount: 300, shiftFillRate: 92, icon: 'DoorOpen' },
-  { id: 'd3', name: 'ESD (Medical)', lead: 'Doc', volunteerCount: 150, shiftFillRate: 78, icon: 'HeartPulse' },
-  { id: 'd4', name: 'Site Ops', lead: 'Sledge', volunteerCount: 600, shiftFillRate: 98, icon: 'Hammer' },
+  { 
+    id: 'd1', name: 'Event Rangers', type: 'RANGERS', lead: 'Ranger Rick', volunteerCount: 450, shiftFillRate: 85, icon: 'Shield',
+    stats: [
+        { label: 'Active Patrols', value: '12', status: 'good' },
+        { label: 'Open Incidents', value: '3', status: 'warning' }
+    ]
+  },
+  { 
+    id: 'd2', name: 'Gate & Perimeter', type: 'GATE', lead: 'Dusty Roads', volunteerCount: 300, shiftFillRate: 92, icon: 'DoorOpen',
+    stats: [
+        { label: 'Vehicles / Hr', value: '142', status: 'good' },
+        { label: 'Wait Time', value: '45m', status: 'warning' },
+        { label: 'Lane 1 Status', value: 'OPEN', status: 'good' }
+    ]
+  },
+  { 
+    id: 'd3', name: 'ESD (Medical)', type: 'MEDICAL', lead: 'Doc Holliday', volunteerCount: 150, shiftFillRate: 78, icon: 'HeartPulse',
+    stats: [
+        { label: 'Bed Capacity', value: '4/12', status: 'good' },
+        { label: 'Triage Queue', value: '0', status: 'good' },
+        { label: 'Critical Supply', value: 'O2', status: 'critical' }
+    ]
+  },
+  { 
+    id: 'd4', name: 'Site Ops (DPW)', type: 'LOGISTICS', lead: 'Sledge', volunteerCount: 600, shiftFillRate: 98, icon: 'Hammer',
+    stats: [
+        { label: 'Fuel Level', value: '68%', status: 'warning' },
+        { label: 'Grid Load', value: '82%', status: 'good' },
+        { label: 'Work Tickets', value: '15', status: 'critical' }
+    ]
+  },
 ];
 
 export const MOCK_LNT_TASKS: LNTTask[] = [

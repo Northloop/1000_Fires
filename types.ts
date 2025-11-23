@@ -9,6 +9,7 @@ export enum UserRole {
 }
 
 export type EntityType = 'EVENT' | 'CAMP' | 'DEPARTMENT';
+export type DepartmentType = 'RANGERS' | 'MEDICAL' | 'GATE' | 'LOGISTICS' | 'GENERIC';
 
 export interface Membership {
   id: string;
@@ -129,10 +130,17 @@ export interface Incident {
 export interface Department {
   id: string;
   name: string;
+  type: DepartmentType;
   lead: string;
   volunteerCount: number;
   shiftFillRate: number;
   icon: string; // Lucide icon name
+  // Type Specific Stats
+  stats?: {
+    label: string;
+    value: string;
+    status: 'good' | 'warning' | 'critical';
+  }[];
 }
 
 export interface LNTTask {
