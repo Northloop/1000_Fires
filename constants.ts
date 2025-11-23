@@ -1,38 +1,70 @@
 
-import { Camp, EventItem, Shift, Task, User, UserRole, Transaction, Incident, Department, LNTTask, MapLayer, MapPin, CampMember, CampAsset } from "./types";
+import { Camp, EventItem, Shift, Task, User, UserRole, Transaction, Incident, Department, LNTTask, MapLayer, MapPin, CampMember, CampAsset, CampTeam } from "./types";
 
-// Removed hardcoded CURRENT_USER in favor of dynamic context
-
+// Dynamic Context: Users now have memberships instead of a single static role
 export const MOCK_USERS: User[] = [
   {
     id: 'u1',
     name: 'Admin Alice',
-    role: UserRole.EVENT_ORGANIZER,
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alice',
-  },
-  {
-    id: 'u2',
-    name: 'Ranger Rick',
-    role: UserRole.DEPARTMENT_LEAD,
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rick',
+    memberships: [
+      {
+        id: 'm1', entityId: 'e1', entityName: 'MN Regional Burn', entityType: 'EVENT', role: UserRole.EVENT_ORGANIZER,
+        permissions: ['VIEW_DASHBOARD', 'MANAGE_EVENT_BUDGET', 'VIEW_VOLUNTEER_DATA', 'ACCESS_SAFETY_DASHBOARD']
+      }
+    ]
   },
   {
     id: 'u3',
     name: 'Sparky',
-    role: UserRole.CAMP_LEAD,
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sparky',
+    memberships: [
+      {
+        id: 'm3_1', entityId: 'c1', entityName: 'Camp Entropy', entityType: 'CAMP', role: UserRole.CAMP_LEAD,
+        permissions: ['VIEW_DASHBOARD', 'VIEW_CAMP_FINANCES', 'MANAGE_CAMP_FINANCES', 'MANAGE_CAMP_ROSTER', 'EDIT_CAMP_DETAILS', 'MANAGE_SUB_TEAMS']
+      },
+      {
+        id: 'm3_2', entityId: 'd1', entityName: 'Rangers', entityType: 'DEPARTMENT', role: UserRole.VOLUNTEER,
+        permissions: ['VIEW_DASHBOARD', 'ACCESS_SAFETY_DASHBOARD']
+      },
+      {
+        id: 'm3_3', entityId: 'e1', entityName: 'MN Regional Burn', entityType: 'EVENT', role: UserRole.PARTICIPANT,
+        permissions: ['VIEW_DASHBOARD']
+      }
+    ]
+  },
+  {
+    id: 'u2',
+    name: 'Ranger Rick',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rick',
+    memberships: [
+      {
+        id: 'm2', entityId: 'd1', entityName: 'Rangers', entityType: 'DEPARTMENT', role: UserRole.DEPARTMENT_LEAD,
+        permissions: ['VIEW_DASHBOARD', 'VIEW_VOLUNTEER_DATA', 'MANAGE_DEPARTMENT_SHIFTS', 'ACCESS_SAFETY_DASHBOARD']
+      }
+    ]
   },
   {
     id: 'u4',
     name: 'Volunteer Val',
-    role: UserRole.VOLUNTEER,
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Val',
+    memberships: [
+      {
+        id: 'm4', entityId: 'e1', entityName: 'MN Regional Burn', entityType: 'EVENT', role: UserRole.VOLUNTEER,
+        permissions: ['VIEW_DASHBOARD']
+      }
+    ]
   },
   {
     id: 'u5',
     name: 'Newbie Ned',
-    role: UserRole.PARTICIPANT,
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ned',
+    memberships: [
+       {
+        id: 'm5', entityId: 'e1', entityName: 'MN Regional Burn', entityType: 'EVENT', role: UserRole.PARTICIPANT,
+        permissions: ['VIEW_DASHBOARD']
+      }
+    ]
   }
 ];
 
@@ -42,12 +74,19 @@ export const MOCK_CAMPS: Camp[] = [
   { id: 'c3', name: 'The Library', description: 'Shhh. Just kidding, we have karaoke.', location: '3:00 & C', members: 20, budgetSpent: 800, budgetTotal: 2000, moopScore: 60 },
 ];
 
+export const MOCK_CAMP_TEAMS: CampTeam[] = [
+  { id: 'ct1', campId: 'c1', name: 'Kitchen Krew', description: 'Feeding the masses.', leadId: 'm2', memberCount: 12, nextMeeting: 'Tue 10am' },
+  { id: 'ct2', campId: 'c1', name: 'Build Team', description: 'Structure and shade.', leadId: 'm3', memberCount: 8, nextMeeting: 'Mon 9am' },
+  { id: 'ct3', campId: 'c1', name: 'Strike Team', description: 'LNT and Tear down.', leadId: 'm4', memberCount: 15 },
+  { id: 'ct4', campId: 'c1', name: 'Vibe Maintenance', description: 'Decor and lighting.', leadId: 'm1', memberCount: 4 },
+];
+
 export const MOCK_CAMP_MEMBERS: CampMember[] = [
-  { id: 'm1', name: 'Alex "Sparky" Miller', role: 'LEAD', campTeam: 'GENERAL', status: 'ARRIVED', email: 'sparky@example.com' },
-  { id: 'm2', name: 'Sarah Jenkins', role: 'MEMBER', campTeam: 'KITCHEN', status: 'ARRIVED', email: 'sarah@example.com' },
-  { id: 'm3', name: 'Mike Ross', role: 'MEMBER', campTeam: 'BUILD', status: 'CONFIRMED', email: 'mike@example.com' },
-  { id: 'm4', name: 'Jessica Pearson', role: 'MEMBER', campTeam: 'STRIKE', status: 'PENDING', email: 'jessica@example.com' },
-  { id: 'm5', name: 'Louis Litt', role: 'NEWBIE', campTeam: 'GENERAL', status: 'CONFIRMED', email: 'louis@example.com' },
+  { id: 'm1', name: 'Alex "Sparky" Miller', role: 'LEAD', campTeam: 'GENERAL', assignedTeamIds: ['ct2', 'ct4'], status: 'ARRIVED', email: 'sparky@example.com' },
+  { id: 'm2', name: 'Sarah Jenkins', role: 'MEMBER', campTeam: 'KITCHEN', assignedTeamIds: ['ct1'], status: 'ARRIVED', email: 'sarah@example.com' },
+  { id: 'm3', name: 'Mike Ross', role: 'MEMBER', campTeam: 'BUILD', assignedTeamIds: ['ct2'], status: 'CONFIRMED', email: 'mike@example.com' },
+  { id: 'm4', name: 'Jessica Pearson', role: 'MEMBER', campTeam: 'STRIKE', assignedTeamIds: ['ct3'], status: 'PENDING', email: 'jessica@example.com' },
+  { id: 'm5', name: 'Louis Litt', role: 'NEWBIE', campTeam: 'GENERAL', assignedTeamIds: ['ct1'], status: 'CONFIRMED', email: 'louis@example.com' },
 ];
 
 export const MOCK_CAMP_ASSETS: CampAsset[] = [
@@ -65,10 +104,10 @@ export const MOCK_EVENTS: EventItem[] = [
 ];
 
 export const MOCK_TASKS: Task[] = [
-  { id: 't1', title: 'Secure Generator Rental', assignee: 'Sparky', status: 'DONE', priority: 'HIGH' },
-  { id: 't2', title: 'Menu Planning - Tuesday Dinner', assignee: 'Chef Mike', status: 'IN_PROGRESS', priority: 'MEDIUM' },
-  { id: 't3', title: 'MOOP Sweep Schedule', assignee: 'Unassigned', status: 'TODO', priority: 'HIGH' },
-  { id: 't4', title: 'Decorate Frontage', assignee: 'Art Team', status: 'TODO', priority: 'LOW' },
+  { id: 't1', title: 'Secure Generator Rental', assignee: 'Sparky', status: 'DONE', priority: 'HIGH', teamId: 'ct2' },
+  { id: 't2', title: 'Menu Planning - Tuesday Dinner', assignee: 'Chef Mike', status: 'IN_PROGRESS', priority: 'MEDIUM', teamId: 'ct1' },
+  { id: 't3', title: 'MOOP Sweep Schedule', assignee: 'Unassigned', status: 'TODO', priority: 'HIGH', teamId: 'ct3' },
+  { id: 't4', title: 'Decorate Frontage', assignee: 'Art Team', status: 'TODO', priority: 'LOW', teamId: 'ct4' },
 ];
 
 export const MOCK_SHIFTS: Shift[] = [

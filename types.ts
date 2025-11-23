@@ -8,6 +8,17 @@ export enum UserRole {
   PARTICIPANT = 'PARTICIPANT'
 }
 
+export type EntityType = 'EVENT' | 'CAMP' | 'DEPARTMENT';
+
+export interface Membership {
+  id: string;
+  entityId: string;
+  entityName: string;
+  entityType: EntityType;
+  role: UserRole;
+  permissions: Permission[];
+}
+
 export type Permission = 
   | 'VIEW_DASHBOARD'
   | 'VIEW_CAMP_FINANCES'
@@ -17,13 +28,14 @@ export type Permission =
   | 'MANAGE_EVENT_BUDGET'
   | 'VIEW_VOLUNTEER_DATA'
   | 'ACCESS_SAFETY_DASHBOARD'
-  | 'MANAGE_DEPARTMENT_SHIFTS';
+  | 'MANAGE_DEPARTMENT_SHIFTS'
+  | 'MANAGE_SUB_TEAMS';
 
 export interface User {
   id: string;
   name: string;
-  role: UserRole;
   avatarUrl: string;
+  memberships: Membership[];
 }
 
 export interface Camp {
@@ -37,13 +49,24 @@ export interface Camp {
   moopScore?: number; // 1-100 (100 is perfect)
 }
 
+export interface CampTeam {
+  id: string;
+  name: string;
+  campId: string;
+  description: string;
+  leadId: string; // Member ID
+  memberCount: number;
+  nextMeeting?: string;
+}
+
 export interface CampMember {
   id: string;
   name: string;
   role: 'LEAD' | 'MEMBER' | 'NEWBIE';
-  campTeam: 'BUILD' | 'KITCHEN' | 'STRIKE' | 'GENERAL';
+  campTeam: 'BUILD' | 'KITCHEN' | 'STRIKE' | 'GENERAL'; // Deprecated in favor of CampTeam relation, kept for backward compat
   status: 'CONFIRMED' | 'ARRIVED' | 'PENDING';
   email: string;
+  assignedTeamIds: string[]; // New: One member can be on multiple sub-teams
 }
 
 export interface CampAsset {
@@ -70,6 +93,7 @@ export interface Task {
   assignee: string;
   status: 'TODO' | 'IN_PROGRESS' | 'DONE';
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  teamId?: string; // Linked to specific sub-team
 }
 
 export interface Shift {

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { LogOut, Save, User, Camera } from 'lucide-react';
 
 const ProfileSettings: React.FC = () => {
-  const { user, updateProfile, logout } = useUser();
+  const { user, updateProfile, logout, activeMembership } = useUser();
   const navigate = useNavigate();
   
   const [name, setName] = useState(user?.name || '');
@@ -46,7 +46,7 @@ const ProfileSettings: React.FC = () => {
             </div>
             <div>
                 <h3 className="text-lg font-bold text-white">{user.name}</h3>
-                <p className="text-sm text-gray-500 font-mono uppercase">{user.role.replace('_', ' ')}</p>
+                <p className="text-sm text-gray-500 font-mono uppercase">{activeMembership?.role.replace('_', ' ')}</p>
             </div>
           </div>
 

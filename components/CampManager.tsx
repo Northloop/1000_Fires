@@ -13,23 +13,34 @@ import {
   Trash2,
   Package,
   Wrench,
-  Mail
+  Mail,
+  Network
 } from 'lucide-react';
-import { MOCK_SHIFTS, MOCK_TASKS, MOCK_CAMPS, MOCK_CAMP_MEMBERS, MOCK_CAMP_ASSETS } from '../constants';
-import { canEditCamp, canViewFinances } from '../lib/rbac';
+import { MOCK_SHIFTS, MOCK_TASKS, MOCK_CAMPS, MOCK_CAMP_MEMBERS, MOCK_CAMP_ASSETS, MOCK_CAMP_TEAMS } from '../constants';
 import FinanceModule from './FinanceModule';
 import LNTModule from './LNTModule';
 import { useUser } from '../context/UserContext';
+import { UserRole } from '../types';
 
 const CampManager: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'roster' | 'tasks' | 'budget' | 'lnt' | 'inventory'>('tasks');
+  const [activeTab, setActiveTab] = useState<'overview' | 'roster' | 'teams' | 'tasks' | 'budget' | 'lnt' | 'inventory'>('teams');
   const camp = MOCK_CAMPS[0]; // Camp Entropy
-  const { user } = useUser();
+  const { user, activeMembership, checkPermission } = useUser();
 
-  if (!user) return null;
+  if (!user || !activeMembership) return null;
 
-  const canEdit = canEditCamp(user);
-  const canSeeFinances = canViewFinances(user);
+  // Basic check: Are we in the right context?
+  if (activeMembership.role !== UserRole.CAMP_LEAD && activeMembership.role !== UserRole.TEAM_LEAD) {
+      return (
+          <div className="p-8 text-center">
+              <h2 className="text-2xl font-bold text-white mb-2">Access Restricted</h2>
+              <p className="text-gray-400">Please switch to your Camp Lead context to view this page.</p>
+          </div>
+      )
+  }
+
+  const canEdit = checkPermission('EDIT_CAMP_DETAILS');
+  const canSeeFinances = checkPermission('VIEW_CAMP_FINANCES');
 
   return (
     <div className="space-y-6">
@@ -66,7 +77,8 @@ const CampManager: React.FC = () => {
       <div className="flex border-b border-white/10 overflow-x-auto no-scrollbar">
         {[
           { id: 'overview', label: 'Overview', icon: Settings, allowed: true },
-          { id: 'tasks', label: 'Tasks & Shifts', icon: ClipboardCheck, allowed: true },
+          { id: 'teams', label: 'Teams', icon: Network, allowed: true },
+          { id: 'tasks', label: 'Tasks', icon: ClipboardCheck, allowed: true },
           { id: 'roster', label: 'Roster', icon: Users, allowed: true },
           { id: 'inventory', label: 'Inventory', icon: Package, allowed: true },
           { id: 'budget', label: 'Finances', icon: Wallet, allowed: canSeeFinances },
@@ -93,6 +105,67 @@ const CampManager: React.FC = () => {
 
       {/* Tab Content */}
       <div className="min-h-[400px]">
+        {/* TEAMS TAB (New - Pillar 9) */}
+        {activeTab === 'teams' && (
+            <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h3 className="text-xl font-bold text-white">Camp Sub-Teams</h3>
+                        <p className="text-sm text-gray-400">Hierarchical management for camp operations.</p>
+                    </div>
+                    <button className="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg font-medium flex items-center">
+                        <Plus className="w-4 h-4 mr-2" /> Create Team
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {MOCK_CAMP_TEAMS.map(team => (
+                        <div key={team.id} className="bg-night-800 border border-white/5 rounded-xl p-5 hover:border-brand-500/30 transition-all group cursor-pointer">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h4 className="text-lg font-bold text-white group-hover:text-brand-500 transition-colors">{team.name}</h4>
+                                    <p className="text-sm text-gray-400">{team.description}</p>
+                                </div>
+                                <div className="flex -space-x-2">
+                                     {/* Mock Avatars of members */}
+                                     {[1,2,3].map(i => (
+                                         <div key={i} className="w-8 h-8 rounded-full bg-night-700 border border-night-800 flex items-center justify-center text-xs text-gray-500">
+                                             <Users className="w-4 h-4" />
+                                         </div>
+                                     ))}
+                                     <div className="w-8 h-8 rounded-full bg-night-900 border border-night-800 flex items-center justify-center text-xs text-gray-400 font-medium">
+                                         +{team.memberCount - 3}
+                                     </div>
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between text-sm p-2 bg-white/5 rounded-lg">
+                                    <span className="text-gray-400">Team Lead</span>
+                                    <span className="text-brand-400 font-medium">
+                                        {MOCK_CAMP_MEMBERS.find(m => m.id === team.leadId)?.name || 'Unknown'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm p-2 bg-white/5 rounded-lg">
+                                    <span className="text-gray-400">Next Meeting</span>
+                                    <span className="text-white font-medium">{team.nextMeeting || 'Not Scheduled'}</span>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 pt-4 border-t border-white/5 flex gap-2">
+                                <button className="flex-1 py-2 bg-brand-600/10 hover:bg-brand-600/20 text-brand-500 text-sm font-medium rounded-lg border border-brand-500/20">
+                                    Manage Roster
+                                </button>
+                                <button className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-lg border border-white/10">
+                                    View Tasks
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
         {activeTab === 'tasks' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
@@ -116,6 +189,11 @@ const CampManager: React.FC = () => {
                       </p>
                       <div className="flex items-center mt-1 space-x-2">
                         <span className="text-xs text-gray-500">{task.assignee}</span>
+                        {task.teamId && (
+                             <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded uppercase">
+                                 {MOCK_CAMP_TEAMS.find(t => t.id === task.teamId)?.name}
+                             </span>
+                        )}
                         {task.priority === 'HIGH' && (
                           <span className="text-[10px] px-1.5 py-0.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded">HIGH</span>
                         )}
@@ -164,7 +242,7 @@ const CampManager: React.FC = () => {
           </div>
         )}
 
-        {/* ROSTER TAB (New) */}
+        {/* ROSTER TAB */}
         {activeTab === 'roster' && (
             <div className="bg-night-800 rounded-xl border border-white/5 overflow-hidden">
                 <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -184,7 +262,7 @@ const CampManager: React.FC = () => {
                             <tr>
                                 <th className="px-6 py-3">Member</th>
                                 <th className="px-6 py-3">Role</th>
-                                <th className="px-6 py-3">Team</th>
+                                <th className="px-6 py-3">Teams</th>
                                 <th className="px-6 py-3">Status</th>
                                 <th className="px-6 py-3 text-right">Actions</th>
                             </tr>
@@ -213,7 +291,16 @@ const CampManager: React.FC = () => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className="text-gray-300">{member.campTeam}</span>
+                                        <div className="flex flex-wrap gap-1">
+                                            {member.assignedTeamIds?.map(tid => {
+                                                const t = MOCK_CAMP_TEAMS.find(team => team.id === tid);
+                                                return t ? (
+                                                    <span key={tid} className="text-xs bg-white/5 px-1.5 py-0.5 rounded border border-white/10 text-gray-300">
+                                                        {t.name}
+                                                    </span>
+                                                ) : null;
+                                            })}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`flex items-center text-xs font-medium ${
@@ -243,7 +330,7 @@ const CampManager: React.FC = () => {
             </div>
         )}
 
-        {/* INVENTORY TAB (New) */}
+        {/* INVENTORY TAB */}
         {activeTab === 'inventory' && (
             <div className="space-y-6">
                 <div className="flex justify-between items-center">

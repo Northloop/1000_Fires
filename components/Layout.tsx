@@ -8,7 +8,6 @@ import {
   Tent, 
   Users, 
   Menu, 
-  X,
   Flame,
   Settings,
   Bell,
@@ -17,41 +16,88 @@ import {
   RefreshCw,
   AlertTriangle,
   Shield,
-  HeartHandshake
+  HeartHandshake,
+  ChevronDown,
+  ChevronRight,
+  Briefcase
 } from 'lucide-react';
 import { useOfflineSync } from '../lib/offline';
 import { UserRole } from '../types';
 import { useUser } from '../context/UserContext';
 
 const Layout: React.FC = () => {
-  const { user } = useUser();
+  const { user, activeMembership, switchContext } = useUser();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isContextDropdownOpen, setIsContextDropdownOpen] = useState(false);
   const { syncState, showConflictModal, resolveConflict, toggleOnlineStatus } = useOfflineSync();
   const navigate = useNavigate();
 
   // If no user is logged in (should be handled by App.tsx redirect, but safe check here)
-  if (!user) return null;
+  if (!user || !activeMembership) return null;
 
-  const navItems = [
-    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/camp', label: 'My Camp', icon: Tent },
-    { to: '/map', label: 'Map', icon: MapIcon },
-    { to: '/schedule', label: 'Schedule', icon: Calendar },
-    { to: '/volunteer', label: 'Volunteer Portal', icon: HeartHandshake },
-    { to: '/safety', label: 'Safety & SOS', icon: Shield },
-  ];
+  // Dynamic Navigation based on Active Context (Membership)
+  const getNavItems = () => {
+    const baseItems = [
+      { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { to: '/map', label: 'Map', icon: MapIcon },
+      { to: '/schedule', label: 'Schedule', icon: Calendar },
+    ];
 
-  // Logic to show Department link for Leads/Organizers
-  if ([UserRole.DEPARTMENT_LEAD, UserRole.EVENT_ORGANIZER].includes(user.role)) {
-     navItems.push({ to: '/department', label: 'Department HQ', icon: Users });
-  }
+    switch (activeMembership.role) {
+      case UserRole.EVENT_ORGANIZER:
+        return [
+          ...baseItems,
+          { to: '/map-builder', label: 'Map Builder', icon: MapIcon },
+          { to: '/department', label: 'Departments', icon: Users },
+          { to: '/safety', label: 'Safety Command', icon: Shield },
+        ];
+      case UserRole.DEPARTMENT_LEAD:
+        return [
+          ...baseItems,
+          { to: '/department', label: 'My Department', icon: Users },
+          { to: '/safety', label: 'Safety Log', icon: Shield },
+        ];
+      case UserRole.CAMP_LEAD:
+        return [
+          ...baseItems,
+          { to: '/camp', label: 'My Camp', icon: Tent },
+          { to: '/volunteer', label: 'Volunteer', icon: HeartHandshake },
+          { to: '/safety', label: 'Safety', icon: Shield },
+        ];
+      case UserRole.VOLUNTEER:
+        return [
+          ...baseItems,
+          { to: '/volunteer', label: 'My Shifts', icon: HeartHandshake },
+          { to: '/safety', label: 'Safety', icon: Shield },
+        ];
+      case UserRole.PARTICIPANT:
+      default:
+        return [
+          ...baseItems,
+          { to: '/volunteer', label: 'Volunteer', icon: HeartHandshake },
+          { to: '/safety', label: 'Safety', icon: Shield },
+        ];
+    }
+  };
 
-  // Logic to show Map Builder for Organizers
-  if (user.role === UserRole.EVENT_ORGANIZER) {
-     navItems.push({ to: '/map-builder', label: 'Map Builder', icon: MapIcon });
-  }
+  const navItems = getNavItems();
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+  const handleContextSwitch = (membershipId: string) => {
+    switchContext(membershipId);
+    setIsContextDropdownOpen(false);
+    navigate('/dashboard'); // Reset to dashboard on switch to avoid dead links
+  };
+
+  const getContextIcon = (type: string) => {
+    switch(type) {
+      case 'CAMP': return <Tent className="w-4 h-4 text-brand-500" />;
+      case 'DEPARTMENT': return <Shield className="w-4 h-4 text-red-500" />;
+      case 'EVENT': return <Briefcase className="w-4 h-4 text-purple-500" />;
+      default: return <Flame className="w-4 h-4" />;
+    }
+  };
 
   return (
     <div className="flex h-screen bg-night-900 text-gray-100 overflow-hidden">
@@ -71,16 +117,58 @@ const Layout: React.FC = () => {
         `}
       >
         <div className="flex flex-col h-full">
-          {/* Logo Area */}
-          <div className="h-16 flex items-center px-6 border-b border-white/5">
-            <Flame className="w-8 h-8 text-brand-500 mr-2" />
-            <span className="text-xl font-bold bg-gradient-to-r from-brand-400 to-brand-600 bg-clip-text text-transparent">
-              1000 FIRES
-            </span>
+          {/* Context Switcher Header */}
+          <div className="relative border-b border-white/5">
+             <button 
+                onClick={() => setIsContextDropdownOpen(!isContextDropdownOpen)}
+                className="w-full h-20 px-6 flex items-center justify-between hover:bg-white/5 transition-colors text-left"
+             >
+                <div className="flex items-center overflow-hidden">
+                    <div className="p-2 bg-white/5 rounded-lg border border-white/10 mr-3">
+                         {getContextIcon(activeMembership.entityType)}
+                    </div>
+                    <div className="min-w-0">
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider truncate">
+                            {activeMembership.role.replace('_', ' ')}
+                        </p>
+                        <p className="text-sm font-bold text-white truncate">
+                            {activeMembership.entityName}
+                        </p>
+                    </div>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isContextDropdownOpen ? 'rotate-180' : ''}`} />
+             </button>
+
+             {/* Dropdown Menu */}
+             {isContextDropdownOpen && (
+                 <div className="absolute top-full left-2 right-2 z-50 bg-night-900 border border-white/10 rounded-xl shadow-2xl py-2 animate-in fade-in slide-in-from-top-2">
+                     <p className="px-4 py-2 text-xs font-bold text-gray-600 uppercase">Switch Persona</p>
+                     {user.memberships.map((mem) => (
+                         <button
+                            key={mem.id}
+                            onClick={() => handleContextSwitch(mem.id)}
+                            className={`w-full px-4 py-3 flex items-center hover:bg-white/5 transition-colors ${activeMembership.id === mem.id ? 'bg-brand-500/10 border-l-2 border-brand-500' : ''}`}
+                         >
+                            <div className="mr-3">
+                                {getContextIcon(mem.entityType)}
+                            </div>
+                            <div className="text-left">
+                                <p className={`text-sm font-medium ${activeMembership.id === mem.id ? 'text-brand-500' : 'text-gray-300'}`}>
+                                    {mem.entityName}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                    {mem.role.replace('_', ' ')}
+                                </p>
+                            </div>
+                            {activeMembership.id === mem.id && <ChevronRight className="w-4 h-4 ml-auto text-brand-500" />}
+                         </button>
+                     ))}
+                 </div>
+             )}
           </div>
 
           {/* Nav Links */}
-          <nav className="flex-1 px-4 py-6 space-y-1">
+          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -109,7 +197,7 @@ const Layout: React.FC = () => {
               />
               <div className="ml-3 truncate">
                 <p className="text-sm font-medium text-white truncate w-32">{user.name}</p>
-                <p className="text-xs text-gray-500">{user.role.replace('_', ' ')}</p>
+                <p className="text-xs text-gray-500">Logged In</p>
               </div>
               <button 
                 onClick={() => navigate('/profile')} 

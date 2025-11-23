@@ -4,6 +4,7 @@ import { CreditCard, Receipt, Download } from 'lucide-react';
 import { Transaction, User } from '../types';
 import { canManageFinances } from '../lib/rbac';
 import { MOCK_TRANSACTIONS } from '../constants';
+import { useUser } from '../context/UserContext';
 
 interface FinanceModuleProps {
   currentUser: User;
@@ -17,8 +18,10 @@ const FinanceModule: React.FC<FinanceModuleProps> = ({ currentUser, budgetTotal,
   const [showReimburseModal, setShowReimburseModal] = useState(false);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
+  
+  const { activeMembership } = useUser();
 
-  const hasAccess = canManageFinances(currentUser);
+  const hasAccess = canManageFinances(activeMembership);
 
   const handlePayment = (e: React.FormEvent) => {
     e.preventDefault();

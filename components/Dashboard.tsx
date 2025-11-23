@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   BarChart, 
@@ -37,13 +38,13 @@ const budgetData = [
 const COLORS = ['#f97316', '#ea580c', '#c2410c', '#7c2d12'];
 
 const Dashboard: React.FC = () => {
-  const { user } = useUser();
+  const { user, activeMembership } = useUser();
   const navigate = useNavigate();
 
-  if (!user) return null;
+  if (!user || !activeMembership) return null;
 
   // VIEW 1: PARTICIPANT & VOLUNTEER (The "Normie" View)
-  if (user.role === UserRole.PARTICIPANT || user.role === UserRole.VOLUNTEER) {
+  if (activeMembership.role === UserRole.PARTICIPANT || activeMembership.role === UserRole.VOLUNTEER) {
     return (
       <div className="space-y-8">
         {/* Welcome Header */}
@@ -137,7 +138,7 @@ const Dashboard: React.FC = () => {
   }
 
   // VIEW 2: CAMP LEAD (Specific to their camp)
-  if (user.role === UserRole.CAMP_LEAD) {
+  if (activeMembership.role === UserRole.CAMP_LEAD) {
      return (
        <div className="space-y-6">
          <div className="flex justify-between items-end mb-2">

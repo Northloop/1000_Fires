@@ -1,4 +1,5 @@
-import { UserRole, Permission, User } from '../types';
+
+import { UserRole, Permission, Membership } from '../types';
 
 const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   [UserRole.EVENT_ORGANIZER]: [
@@ -20,7 +21,8 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'VIEW_CAMP_FINANCES',
     'MANAGE_CAMP_FINANCES',
     'MANAGE_CAMP_ROSTER',
-    'EDIT_CAMP_DETAILS'
+    'EDIT_CAMP_DETAILS',
+    'MANAGE_SUB_TEAMS'
   ],
   [UserRole.TEAM_LEAD]: [
     'VIEW_DASHBOARD',
@@ -35,11 +37,11 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ]
 };
 
-export const hasPermission = (user: User, permission: Permission): boolean => {
-  if (!user || !user.role) return false;
-  return ROLE_PERMISSIONS[user.role]?.includes(permission) || false;
+export const hasPermission = (membership: Membership | null, permission: Permission): boolean => {
+  if (!membership || !membership.role) return false;
+  return ROLE_PERMISSIONS[membership.role]?.includes(permission) || false;
 };
 
-export const canEditCamp = (user: User): boolean => hasPermission(user, 'EDIT_CAMP_DETAILS');
-export const canManageFinances = (user: User): boolean => hasPermission(user, 'MANAGE_CAMP_FINANCES');
-export const canViewFinances = (user: User): boolean => hasPermission(user, 'VIEW_CAMP_FINANCES');
+export const canEditCamp = (membership: Membership | null): boolean => hasPermission(membership, 'EDIT_CAMP_DETAILS');
+export const canManageFinances = (membership: Membership | null): boolean => hasPermission(membership, 'MANAGE_CAMP_FINANCES');
+export const canViewFinances = (membership: Membership | null): boolean => hasPermission(membership, 'VIEW_CAMP_FINANCES');
