@@ -13,14 +13,15 @@ import {
 } from 'recharts';
 import { Activity, Users, Tent, DollarSign, AlertCircle } from 'lucide-react';
 
+// Updated data to represent realistic percentages for "Fill Rate"
 const data = [
-  { name: 'Mon', volunteers: 40 },
-  { name: 'Tue', volunteers: 30 },
-  { name: 'Wed', volunteers: 20 },
-  { name: 'Thu', volunteers: 27 },
-  { name: 'Fri', volunteers: 18 },
-  { name: 'Sat', volunteers: 23 },
-  { name: 'Sun', volunteers: 34 },
+  { name: 'Mon', rate: 45 },
+  { name: 'Tue', rate: 52 },
+  { name: 'Wed', rate: 38 },
+  { name: 'Thu', rate: 65 },
+  { name: 'Fri', rate: 82 },
+  { name: 'Sat', rate: 95 },
+  { name: 'Sun', rate: 88 },
 ];
 
 const budgetData = [
@@ -70,28 +71,38 @@ const Dashboard: React.FC = () => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Chart */}
-        <div className="lg:col-span-2 bg-night-800 p-6 rounded-xl border border-white/5">
-          <h3 className="text-lg font-bold text-white mb-6">Volunteer Shift Fill Rate</h3>
-          <div className="h-80 w-full">
+        <div className="lg:col-span-2 bg-night-800 p-6 rounded-xl border border-white/5 flex flex-col">
+          <h3 className="text-lg font-bold text-white mb-2">Volunteer Shift Fill Rate</h3>
+          <p className="text-sm text-gray-500 mb-6">Percentage of shifts filled per day</p>
+          <div className="h-80 w-full flex-1">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
+              <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                <XAxis dataKey="name" stroke="#666" />
-                <YAxis stroke="#666" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #333' }}
-                  itemStyle={{ color: '#fff' }}
+                <XAxis dataKey="name" stroke="#666" tick={{ fill: '#9ca3af', fontSize: 12 }} tickLine={false} axisLine={false} dy={10} />
+                <YAxis 
+                  stroke="#666" 
+                  domain={[0, 100]} 
+                  tickFormatter={(value) => `${value}%`} 
+                  tick={{ fill: '#9ca3af', fontSize: 12 }} 
+                  tickLine={false} 
+                  axisLine={false}
                 />
-                <Bar dataKey="volunteers" fill="#f97316" radius={[4, 4, 0, 0]} />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #333', borderRadius: '8px', color: '#fff' }}
+                  formatter={(value: number) => [`${value}%`, 'Fill Rate']}
+                />
+                <Bar dataKey="rate" fill="#f97316" radius={[4, 4, 0, 0]} barSize={40} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Secondary Chart */}
-        <div className="bg-night-800 p-6 rounded-xl border border-white/5">
-          <h3 className="text-lg font-bold text-white mb-6">Budget Allocation</h3>
-          <div className="h-80 w-full">
+        <div className="bg-night-800 p-6 rounded-xl border border-white/5 flex flex-col">
+          <h3 className="text-lg font-bold text-white mb-2">Budget Allocation</h3>
+          <p className="text-sm text-gray-500 mb-6">Distribution by category</p>
+          <div className="h-64 w-full flex-1 relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -99,30 +110,43 @@ const Dashboard: React.FC = () => {
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
-                  outerRadius={100}
+                  outerRadius={80}
                   fill="#8884d8"
                   paddingAngle={5}
                   dataKey="value"
+                  stroke="none"
                 >
                   {budgetData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip 
-                   contentStyle={{ backgroundColor: '#18181b', border: '1px solid #333' }}
+                   contentStyle={{ backgroundColor: '#18181b', border: '1px solid #333', borderRadius: '8px' }}
                    itemStyle={{ color: '#fff' }}
+                   formatter={(value: number) => [`$${value}k`, 'Budget']}
                 />
               </PieChart>
             </ResponsiveContainer>
-            <div className="mt-4 space-y-2">
-              {budgetData.map((entry, index) => (
-                <div key={index} className="flex items-center text-sm text-gray-400">
-                  <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[index] }}></div>
-                  <span className="flex-1">{entry.name}</span>
-                  <span className="text-white font-medium">{entry.value}k</span>
-                </div>
-              ))}
+            
+            {/* Center Text */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="text-center">
+                <span className="block text-2xl font-bold text-white">1.2M</span>
+                <span className="block text-xs text-gray-500 uppercase">Total</span>
+              </div>
             </div>
+          </div>
+          
+          <div className="mt-4 space-y-3">
+            {budgetData.map((entry, index) => (
+              <div key={index} className="flex items-center text-sm text-gray-400 justify-between">
+                <div className="flex items-center">
+                   <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[index] }}></div>
+                   <span>{entry.name}</span>
+                </div>
+                <span className="text-white font-mono font-medium">${entry.value}k</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -131,7 +155,7 @@ const Dashboard: React.FC = () => {
       <div className="bg-night-800 rounded-xl border border-white/5 overflow-hidden">
         <div className="p-6 border-b border-white/5 flex justify-between items-center">
           <h3 className="text-lg font-bold text-white">Recent Activity</h3>
-          <button className="text-sm text-brand-500 hover:text-brand-400">View All</button>
+          <button className="text-sm text-brand-500 hover:text-brand-400 font-medium">View All</button>
         </div>
         <div className="divide-y divide-white/5">
           {[
@@ -139,8 +163,8 @@ const Dashboard: React.FC = () => {
             { msg: 'Ranger HQ posted a new announcement regarding weather.', time: '1h ago', icon: AlertCircle },
             { msg: 'New Art Grant application received: "The Phoenix Rises"', time: '2h ago', icon: DollarSign },
           ].map((item, idx) => (
-            <div key={idx} className="p-4 flex items-center hover:bg-white/5 transition-colors cursor-pointer">
-              <div className="bg-white/5 p-2 rounded-lg text-gray-400 mr-4">
+            <div key={idx} className="p-4 flex items-center hover:bg-white/5 transition-colors cursor-pointer group">
+              <div className="bg-white/5 p-2 rounded-lg text-gray-400 mr-4 group-hover:text-brand-500 group-hover:bg-brand-500/10 transition-colors">
                 <item.icon className="w-5 h-5" />
               </div>
               <div className="flex-1">
