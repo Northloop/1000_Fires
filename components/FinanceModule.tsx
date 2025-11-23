@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { DollarSign, CreditCard, Receipt, Download, PlusCircle } from 'lucide-react';
+import { CreditCard, Receipt, Download } from 'lucide-react';
 import { Transaction, User } from '../types';
 import { canManageFinances } from '../lib/rbac';
 import { MOCK_TRANSACTIONS } from '../constants';

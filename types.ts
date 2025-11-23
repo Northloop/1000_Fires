@@ -1,3 +1,4 @@
+
 export enum UserRole {
   EVENT_ORGANIZER = 'EVENT_ORGANIZER',
   DEPARTMENT_LEAD = 'DEPARTMENT_LEAD',
@@ -97,4 +98,36 @@ export interface LNTTask {
   area: string;
   status: 'CLEAN' | 'DIRTY' | 'IN_PROGRESS';
   assignedTo?: string;
+}
+
+// Map Builder Types
+export interface MapLayer {
+  id: string;
+  name: string;
+  visible: boolean;
+  type: 'SATELLITE' | 'TERRAIN' | 'CUSTOM' | 'VECTOR';
+  opacity: number;
+  url?: string; // For custom overlays or tile servers
+}
+
+export interface MapOverlay {
+  id: string;
+  name: string;
+  imageUrl: string;
+  bounds: {
+    north: number;
+    south: number;
+    east: number;
+    west: number;
+  };
+  rotation: number;
+}
+
+export interface MapPin {
+  id: number;
+  type: 'camp' | 'art' | 'medical' | 'infra';
+  x: number; // Percentage 0-100
+  y: number; // Percentage 0-100
+  name: string;
+  desc: string;
 }

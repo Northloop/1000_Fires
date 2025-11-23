@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Map as MapIcon, 
@@ -17,24 +18,29 @@ import {
   AlertTriangle,
   Shield
 } from 'lucide-react';
-import { CURRENT_USER } from '../constants';
 import { useOfflineSync } from '../lib/offline';
 import { UserRole } from '../types';
+import { useUser } from '../context/UserContext';
 
 const Layout: React.FC = () => {
+  const { user } = useUser();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { syncState, showConflictModal, resolveConflict, toggleOnlineStatus } = useOfflineSync();
+  const navigate = useNavigate();
+
+  // If no user is logged in (should be handled by App.tsx redirect, but safe check here)
+  if (!user) return null;
 
   const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/camp', label: 'My Camp', icon: Tent },
     { to: '/map', label: 'Map', icon: MapIcon },
     { to: '/schedule', label: 'Schedule', icon: Calendar },
-    { to: '/safety', label: 'Safety & SOS', icon: Shield }, // New Link
+    { to: '/safety', label: 'Safety & SOS', icon: Shield },
   ];
 
   // Logic to show Department link for Leads/Organizers
-  if ([UserRole.DEPARTMENT_LEAD, UserRole.EVENT_ORGANIZER].includes(CURRENT_USER.role)) {
+  if ([UserRole.DEPARTMENT_LEAD, UserRole.EVENT_ORGANIZER].includes(user.role)) {
      navItems.push({ to: '/department', label: 'Department HQ', icon: Users });
   }
 
@@ -90,15 +96,19 @@ const Layout: React.FC = () => {
           <div className="p-4 border-t border-white/5">
             <div className="flex items-center">
               <img 
-                src={CURRENT_USER.avatarUrl} 
-                alt={CURRENT_USER.name} 
+                src={user.avatarUrl} 
+                alt={user.name} 
                 className="w-10 h-10 rounded-full border border-white/10"
               />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-white">{CURRENT_USER.name}</p>
-                <p className="text-xs text-gray-500">{CURRENT_USER.role.replace('_', ' ')}</p>
+              <div className="ml-3 truncate">
+                <p className="text-sm font-medium text-white truncate w-32">{user.name}</p>
+                <p className="text-xs text-gray-500">{user.role.replace('_', ' ')}</p>
               </div>
-              <button className="ml-auto p-2 text-gray-400 hover:text-white">
+              <button 
+                onClick={() => navigate('/profile')} 
+                className="ml-auto p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                title="Settings"
+              >
                 <Settings className="w-4 h-4" />
               </button>
             </div>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Users, 
@@ -9,20 +10,23 @@ import {
   Circle, 
   Clock,
   MoreVertical,
-  Lock,
   Trash2
 } from 'lucide-react';
-import { MOCK_SHIFTS, MOCK_TASKS, MOCK_CAMPS, CURRENT_USER } from '../constants';
+import { MOCK_SHIFTS, MOCK_TASKS, MOCK_CAMPS } from '../constants';
 import { canEditCamp, canViewFinances } from '../lib/rbac';
 import FinanceModule from './FinanceModule';
 import LNTModule from './LNTModule';
+import { useUser } from '../context/UserContext';
 
 const CampManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'roster' | 'tasks' | 'budget' | 'lnt'>('tasks');
   const camp = MOCK_CAMPS[0]; // Camp Entropy
+  const { user } = useUser();
 
-  const canEdit = canEditCamp(CURRENT_USER);
-  const canSeeFinances = canViewFinances(CURRENT_USER);
+  if (!user) return null;
+
+  const canEdit = canEditCamp(user);
+  const canSeeFinances = canViewFinances(user);
 
   return (
     <div className="space-y-6">
@@ -130,7 +134,7 @@ const CampManager: React.FC = () => {
                 </button>
               </div>
               <div className="space-y-3">
-                {MOCK_SHIFTS.filter(s => s.role !== 'Ranger (Alpha)' && s.role !== 'Ranger (Dirt)').map((shift) => (
+                {MOCK_SHIFTS.filter(s => s.role !== 'Ranger (Shift Lead)' && s.role !== 'Ranger (Patrol)').map((shift) => (
                   <div key={shift.id} className="bg-night-800 p-4 rounded-xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <h4 className="font-bold text-white">{shift.role}</h4>
@@ -159,7 +163,7 @@ const CampManager: React.FC = () => {
 
         {activeTab === 'budget' && (
             <FinanceModule 
-              currentUser={CURRENT_USER}
+              currentUser={user}
               budgetTotal={camp.budgetTotal}
               budgetSpent={camp.budgetSpent}
             />
