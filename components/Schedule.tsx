@@ -25,7 +25,7 @@ const Schedule: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Event Schedule</h1>
-          <p className="text-gray-400">Discover what's happening on the playa.</p>
+          <p className="text-gray-400">Discover what's happening on the event grounds.</p>
         </div>
         
         <div className="flex bg-night-800 rounded-lg p-1 border border-white/5">

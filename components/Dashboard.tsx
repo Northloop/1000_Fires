@@ -28,7 +28,7 @@ const budgetData = [
   { name: 'Infrastructure', value: 400 },
   { name: 'Art Grants', value: 300 },
   { name: 'Safety', value: 300 },
-  { name: 'City Ops', value: 200 },
+  { name: 'Site Ops', value: 200 },
 ];
 
 const COLORS = ['#f97316', '#ea580c', '#c2410c', '#7c2d12'];

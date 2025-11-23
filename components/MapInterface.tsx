@@ -7,10 +7,10 @@ const MapInterface: React.FC = () => {
 
   const pins = [
     { id: 1, type: 'camp', x: 30, y: 40, name: 'Camp Entropy', desc: '4:30 & B' },
-    { id: 2, type: 'art', x: 50, y: 50, name: 'The Man', desc: 'Open Playa' },
+    { id: 2, type: 'art', x: 50, y: 50, name: 'The Effigy', desc: 'Open Grounds' },
     { id: 3, type: 'medical', x: 20, y: 80, name: 'Ranger Station 3', desc: '3:00 Plaza' },
-    { id: 4, type: 'camp', x: 70, y: 30, name: 'Bass Haven', desc: '10:00 & Esp' },
-    { id: 5, type: 'art', x: 80, y: 60, name: 'Temple of Atonement', desc: 'Deep Playa' },
+    { id: 4, type: 'camp', x: 70, y: 30, name: 'Bass Haven', desc: '10:00 & Inner Circle' },
+    { id: 5, type: 'art', x: 80, y: 60, name: 'Temple of Atonement', desc: 'Deep Field' },
   ];
 
   const filteredPins = activeFilter === 'all' ? pins : pins.filter(p => p.type === activeFilter);
@@ -61,10 +61,10 @@ const MapInterface: React.FC = () => {
           }}
         ></div>
         
-        {/* Semi-circle representation of Black Rock City layout */}
+        {/* Semi-circle representation of Generic Event layout */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border-4 border-white/5 opacity-50"></div>
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full border-4 border-white/5 opacity-50"></div>
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[100px] h-[100px] rounded-full border-2 border-brand-500/30 opacity-80 flex items-center justify-center text-xs text-white/50">MAN</div>
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[100px] h-[100px] rounded-full border-2 border-brand-500/30 opacity-80 flex items-center justify-center text-xs text-white/50">EFFIGY</div>
 
         {/* Pins */}
         {filteredPins.map(pin => (

@@ -69,7 +69,7 @@ const SafetyModule: React.FC = () => {
         </div>
 
         <p className="text-red-200 mt-8 max-w-md relative z-10 text-sm md:text-base px-4">
-          Pressing SOS transmits your GPS coordinates to Black Rock Rangers and ESD immediately. <br/><span className="font-bold text-white">Only use for life-threatening emergencies.</span>
+          Pressing SOS transmits your GPS coordinates to Event Rangers and ESD immediately. <br/><span className="font-bold text-white">Only use for life-threatening emergencies.</span>
         </p>
 
         {showSOSConfirm && (
@@ -164,8 +164,8 @@ const SafetyModule: React.FC = () => {
             <div className="space-y-3">
               {[
                 { name: 'Ranger Station 3', loc: '3:00 & C', dist: '0.2mi', icon: Shield, color: 'text-yellow-500' },
-                { name: 'Rampart (Medical)', loc: 'Esplanade & 5:30', dist: '0.8mi', icon: Activity, color: 'text-red-500' },
-                { name: 'Fire Response 1', loc: 'Center Camp', dist: '0.5mi', icon: Flame, color: 'text-orange-500' },
+                { name: 'Medical HQ', loc: 'Inner Circle & 5:30', dist: '0.8mi', icon: Activity, color: 'text-red-500' },
+                { name: 'Fire Response 1', loc: 'Center Village', dist: '0.5mi', icon: Flame, color: 'text-orange-500' },
               ].map((res, idx) => (
                 <div key={idx} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
                   <div className="flex items-center">
