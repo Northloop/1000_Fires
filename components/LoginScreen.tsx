@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { MOCK_USERS } from '../constants';
-import { Flame, ArrowRight, Shield, Tent, Users, User as UserIcon, LayoutDashboard, HeartPulse, DoorOpen, Hammer } from 'lucide-react';
+import { Flame, ArrowRight, Shield, Tent, Users, User as UserIcon, LayoutDashboard, HeartPulse, DoorOpen, Hammer, Truck, Map, Moon } from 'lucide-react';
 import { UserRole } from '../types';
 
 const LoginScreen: React.FC = () => {
@@ -20,6 +20,10 @@ const LoginScreen: React.FC = () => {
     if (entityName?.includes('Medical')) return <HeartPulse className="w-5 h-5 text-red-400" />;
     if (entityName?.includes('Gate')) return <DoorOpen className="w-5 h-5 text-blue-400" />;
     if (entityName?.includes('Site Ops')) return <Hammer className="w-5 h-5 text-orange-400" />;
+    if (entityName?.includes('FAST')) return <Flame className="w-5 h-5 text-red-600" />;
+    if (entityName?.includes('DMV')) return <Truck className="w-5 h-5 text-yellow-500" />;
+    if (entityName?.includes('Placement')) return <Map className="w-5 h-5 text-green-500" />;
+    if (entityName?.includes('Sanctuary')) return <Moon className="w-5 h-5 text-purple-400" />;
 
     switch(role) {
       case UserRole.EVENT_ORGANIZER: return <LayoutDashboard className="w-5 h-5 text-purple-400" />;

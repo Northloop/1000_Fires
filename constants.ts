@@ -56,6 +56,17 @@ export const MOCK_USERS: User[] = [
     ]
   },
   {
+    id: 'u_sage',
+    name: 'Sage',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sage',
+    memberships: [
+      {
+        id: 'm_sage', entityId: 'd8', entityName: 'Sanctuary', entityType: 'DEPARTMENT', role: UserRole.DEPARTMENT_LEAD,
+        permissions: ['VIEW_DASHBOARD', 'VIEW_VOLUNTEER_DATA', 'MANAGE_DEPARTMENT_SHIFTS', 'ACCESS_SAFETY_DASHBOARD']
+      }
+    ]
+  },
+  {
     id: 'u_dusty',
     name: 'Dusty Roads',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dusty',
@@ -74,6 +85,39 @@ export const MOCK_USERS: User[] = [
       {
         id: 'm_sledge', entityId: 'd4', entityName: 'Site Ops (DPW)', entityType: 'DEPARTMENT', role: UserRole.DEPARTMENT_LEAD,
         permissions: ['VIEW_DASHBOARD', 'VIEW_VOLUNTEER_DATA', 'MANAGE_DEPARTMENT_SHIFTS', 'ACCESS_SAFETY_DASHBOARD']
+      }
+    ]
+  },
+  {
+    id: 'u_blaze',
+    name: 'Blaze',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Blaze',
+    memberships: [
+      {
+        id: 'm_blaze', entityId: 'd5', entityName: 'FAST (Fire Safety)', entityType: 'DEPARTMENT', role: UserRole.DEPARTMENT_LEAD,
+        permissions: ['VIEW_DASHBOARD', 'VIEW_VOLUNTEER_DATA', 'MANAGE_DEPARTMENT_SHIFTS', 'ACCESS_SAFETY_DASHBOARD']
+      }
+    ]
+  },
+  {
+    id: 'u_gearhead',
+    name: 'Gearhead',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Gearhead',
+    memberships: [
+      {
+        id: 'm_gearhead', entityId: 'd6', entityName: 'DMV (Mutant Vehicles)', entityType: 'DEPARTMENT', role: UserRole.DEPARTMENT_LEAD,
+        permissions: ['VIEW_DASHBOARD', 'VIEW_VOLUNTEER_DATA', 'MANAGE_DEPARTMENT_SHIFTS']
+      }
+    ]
+  },
+  {
+    id: 'u_mapit',
+    name: 'Mapper Mary',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mary',
+    memberships: [
+      {
+        id: 'm_mapit', entityId: 'd7', entityName: 'Placement', entityType: 'DEPARTMENT', role: UserRole.DEPARTMENT_LEAD,
+        permissions: ['VIEW_DASHBOARD', 'VIEW_VOLUNTEER_DATA', 'MANAGE_MAP', 'MANAGE_DEPARTMENT_SHIFTS']
       }
     ]
   },
@@ -146,6 +190,15 @@ export const MOCK_SHIFTS: Shift[] = [
   { id: 's6', departmentId: 'd2', role: 'Greeter', time: 'Wed 10:00 AM - 02:00 PM', filled: false },
   { id: 's7', departmentId: 'd4', role: 'Power Grid Check', time: 'Thu 01:00 PM - 04:00 PM', filled: true, volunteerName: 'Sledge' },
   { id: 's8', departmentId: 'd3', role: 'Hydration Station', time: 'Sat 02:00 PM - 06:00 PM', filled: true, volunteerName: 'Medic Mike' },
+  // FAST Shifts
+  { id: 's9', departmentId: 'd5', role: 'Effigy Perimeter', time: 'Sat 09:00 PM - 12:00 AM', filled: false, requiredSkills: ['Flame Safety'] },
+  { id: 's10', departmentId: 'd5', role: 'Flame Effect Inspection', time: 'Thu 02:00 PM - 06:00 PM', filled: true, volunteerName: 'Blaze' },
+  // DMV Shifts
+  { id: 's11', departmentId: 'd6', role: 'Vehicle Inspector', time: 'Wed 10:00 AM - 02:00 PM', filled: true, volunteerName: 'Gearhead' },
+  { id: 's12', departmentId: 'd6', role: 'Line Management', time: 'Wed 10:00 AM - 02:00 PM', filled: false },
+  // Sanctuary Shifts
+  { id: 's13', departmentId: 'd8', role: 'Sitter', time: 'Fri 10:00 PM - 02:00 AM', filled: false, requiredSkills: ['Green Dot Training'] },
+  { id: 's14', departmentId: 'd8', role: 'Shift Lead', time: 'Fri 10:00 PM - 02:00 AM', filled: true, volunteerName: 'Sage' },
 ];
 
 export const MOCK_TRANSACTIONS: Transaction[] = [
@@ -193,6 +246,38 @@ export const MOCK_DEPARTMENTS: Department[] = [
         { label: 'Work Tickets', value: '15', status: 'critical' }
     ]
   },
+  { 
+    id: 'd5', name: 'FAST (Fire Safety)', type: 'FIRE', lead: 'Blaze', volunteerCount: 80, shiftFillRate: 95, icon: 'Flame',
+    stats: [
+        { label: 'Inspections', value: '42/50', status: 'good' },
+        { label: 'Perimeter', value: 'SECURE', status: 'good' },
+        { label: 'Red Tags', value: '2', status: 'warning' }
+    ]
+  },
+  { 
+    id: 'd6', name: 'DMV (Mutant Vehicles)', type: 'DMV', lead: 'Gearhead', volunteerCount: 60, shiftFillRate: 88, icon: 'Truck',
+    stats: [
+        { label: 'Day Licenses', value: '125', status: 'good' },
+        { label: 'Night Licenses', value: '84', status: 'good' },
+        { label: 'Inspection Q', value: '5', status: 'warning' }
+    ]
+  },
+  { 
+    id: 'd7', name: 'Placement', type: 'PLACEMENT', lead: 'Mapper Mary', volunteerCount: 40, shiftFillRate: 100, icon: 'Map',
+    stats: [
+        { label: 'Camps Placed', value: '100%', status: 'good' },
+        { label: 'Disputes', value: '1', status: 'warning' },
+        { label: 'Land Grabs', value: '0', status: 'good' }
+    ]
+  },
+  { 
+    id: 'd8', name: 'Sanctuary', type: 'SANCTUARY', lead: 'Sage', volunteerCount: 120, shiftFillRate: 82, icon: 'Moon',
+    stats: [
+        { label: 'Capacity', value: '3/20', status: 'good' },
+        { label: 'Sitters', value: '8', status: 'good' },
+        { label: 'Intake', value: 'OPEN', status: 'good' }
+    ]
+  }
 ];
 
 export const MOCK_LNT_TASKS: LNTTask[] = [

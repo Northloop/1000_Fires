@@ -9,7 +9,7 @@ export enum UserRole {
 }
 
 export type EntityType = 'EVENT' | 'CAMP' | 'DEPARTMENT';
-export type DepartmentType = 'RANGERS' | 'MEDICAL' | 'GATE' | 'LOGISTICS' | 'GENERIC';
+export type DepartmentType = 'RANGERS' | 'MEDICAL' | 'GATE' | 'LOGISTICS' | 'FIRE' | 'DMV' | 'PLACEMENT' | 'SANCTUARY' | 'GENERIC';
 
 export interface Membership {
   id: string;
