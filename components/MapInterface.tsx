@@ -17,13 +17,18 @@ const MapInterface: React.FC = () => {
     switch (type) {
       case 'art': return 'text-purple-500';
       case 'medical': return 'text-red-500';
+      case 'infra': return 'text-orange-500';
       default: return 'text-brand-500';
     }
   };
 
   const openGoogleMaps = (pin: any) => {
-     // Mock coords logic
-     alert(`Opening Google Maps for ${pin.name}...`);
+     if (pin.lat && pin.lng) {
+         window.open(`https://www.google.com/maps/search/?api=1&query=${pin.lat},${pin.lng}`, '_blank');
+     } else {
+         alert(`Coordinates missing for ${pin.name}. Opening generic map...`);
+         window.open(`https://www.google.com/maps/search/?api=1&query=Burning+Man`, '_blank');
+     }
   };
 
   return (
@@ -119,7 +124,7 @@ const MapInterface: React.FC = () => {
           <div className="flex justify-between items-start">
             <div>
               <h3 className="text-lg font-bold text-white">{selectedPin.name}</h3>
-              <p className="text-sm text-gray-400">{selectedPin.desc}</p>
+              <p className="text-sm text-gray-400">{selectedPin.description || 'No description available'}</p>
             </div>
             <button onClick={() => setSelectedPin(null)} className="text-gray-500 hover:text-white">
               &times;

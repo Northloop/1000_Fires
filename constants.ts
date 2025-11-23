@@ -10,7 +10,7 @@ export const MOCK_USERS: User[] = [
     memberships: [
       {
         id: 'm1', entityId: 'e1', entityName: 'MN Regional Burn', entityType: 'EVENT', role: UserRole.EVENT_ORGANIZER,
-        permissions: ['VIEW_DASHBOARD', 'MANAGE_EVENT_BUDGET', 'VIEW_VOLUNTEER_DATA', 'ACCESS_SAFETY_DASHBOARD']
+        permissions: ['VIEW_DASHBOARD', 'MANAGE_EVENT_BUDGET', 'VIEW_VOLUNTEER_DATA', 'ACCESS_SAFETY_DASHBOARD', 'MANAGE_MAP', 'MANAGE_ALL_EVENTS']
       }
     ]
   },
@@ -21,7 +21,7 @@ export const MOCK_USERS: User[] = [
     memberships: [
       {
         id: 'm3_1', entityId: 'c1', entityName: 'Camp Entropy', entityType: 'CAMP', role: UserRole.CAMP_LEAD,
-        permissions: ['VIEW_DASHBOARD', 'VIEW_CAMP_FINANCES', 'MANAGE_CAMP_FINANCES', 'MANAGE_CAMP_ROSTER', 'EDIT_CAMP_DETAILS', 'MANAGE_SUB_TEAMS']
+        permissions: ['VIEW_DASHBOARD', 'VIEW_CAMP_FINANCES', 'MANAGE_CAMP_FINANCES', 'MANAGE_CAMP_ROSTER', 'EDIT_CAMP_DETAILS', 'MANAGE_SUB_TEAMS', 'MANAGE_OWN_EVENTS']
       },
       {
         id: 'm3_2', entityId: 'd1', entityName: 'Rangers', entityType: 'DEPARTMENT', role: UserRole.VOLUNTEER,
@@ -123,10 +123,11 @@ export const MOCK_CAMP_ASSETS: CampAsset[] = [
 ];
 
 export const MOCK_EVENTS: EventItem[] = [
-  { id: 'e1', title: 'Sunset Yoga', host: 'Camp Serenity', startTime: '2026-10-02T18:00:00', location: 'Temple Grounds', type: 'WORKSHOP' },
-  { id: 'e2', title: 'Midnight Poutine', host: 'Camp Maple', startTime: '2026-10-02T23:59:00', location: '4:30 & B', type: 'FOOD' },
-  { id: 'e3', title: 'Bass Drop Ritual', host: 'Bass Haven', startTime: '2026-10-03T01:00:00', location: '10:00 & Inner Circle', type: 'MUSIC' },
-  { id: 'e4', title: 'Fire Spinning 101', host: 'Pyro Guild', startTime: '2026-10-03T20:00:00', location: 'Center Village', type: 'PERFORMANCE' },
+  { id: 'e1', title: 'Sunset Yoga', description: 'Beginner friendly yoga session to welcome the night.', host: 'Camp Serenity', campId: 'c99', startTime: '2026-10-02T18:00:00', endTime: '2026-10-02T19:00:00', location: 'Temple Grounds', type: 'WORKSHOP' },
+  { id: 'e2', title: 'Midnight Poutine', description: 'Bring your own bowl!', host: 'Camp Maple', campId: 'c98', startTime: '2026-10-02T23:59:00', endTime: '2026-10-03T02:00:00', location: '4:30 & B', type: 'FOOD' },
+  { id: 'e3', title: 'Bass Drop Ritual', description: 'High fidelity low frequency worship.', host: 'Bass Haven', campId: 'c2', startTime: '2026-10-03T01:00:00', endTime: '2026-10-03T04:00:00', location: '10:00 & Inner Circle', type: 'MUSIC' },
+  { id: 'e4', title: 'Fire Spinning 101', description: 'Learn the basics of poi and staff.', host: 'Pyro Guild', campId: 'c97', startTime: '2026-10-03T20:00:00', endTime: '2026-10-03T21:30:00', location: 'Center Village', type: 'PERFORMANCE' },
+  { id: 'e5', title: 'Camp Entropy Happy Hour', description: 'Chaos and cocktails.', host: 'Camp Entropy', campId: 'c1', startTime: '2026-10-03T16:00:00', endTime: '2026-10-03T18:00:00', location: '4:30 & B', type: 'FOOD' },
 ];
 
 export const MOCK_TASKS: Task[] = [
@@ -209,9 +210,9 @@ export const MOCK_MAP_LAYERS: MapLayer[] = [
 ];
 
 export const MOCK_MAP_PINS: MapPin[] = [
-  { id: 1, type: 'camp', x: 30, y: 40, name: 'Camp Entropy', desc: 'Sector 4' },
-  { id: 2, type: 'art', x: 50, y: 50, name: 'The Effigy', desc: 'Main Field' },
-  { id: 3, type: 'medical', x: 20, y: 80, name: 'Ranger Station 3', desc: 'South Road' },
-  { id: 4, type: 'camp', x: 70, y: 30, name: 'Bass Haven', desc: 'Deep Woods' },
-  { id: 5, type: 'art', x: 80, y: 60, name: 'Temple of Atonement', desc: 'North Field' },
+  { id: 'p1', type: 'camp', x: 30, y: 40, lat: 44.9778, lng: -93.2650, name: 'Camp Entropy', description: 'Sector 4, serving chaos', campId: 'c1' },
+  { id: 'p2', type: 'art', x: 50, y: 50, lat: 44.9780, lng: -93.2660, name: 'The Effigy', description: 'Main Field' },
+  { id: 'p3', type: 'medical', x: 20, y: 80, lat: 44.9750, lng: -93.2700, name: 'Ranger Station 3', description: 'South Road' },
+  { id: 'p4', type: 'camp', x: 70, y: 30, lat: 44.9800, lng: -93.2600, name: 'Bass Haven', description: 'Deep Woods', campId: 'c2' },
+  { id: 'p5', type: 'art', x: 80, y: 60, lat: 44.9790, lng: -93.2550, name: 'Temple of Atonement', description: 'North Field' },
 ];

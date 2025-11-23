@@ -30,7 +30,10 @@ export type Permission =
   | 'VIEW_VOLUNTEER_DATA'
   | 'ACCESS_SAFETY_DASHBOARD'
   | 'MANAGE_DEPARTMENT_SHIFTS'
-  | 'MANAGE_SUB_TEAMS';
+  | 'MANAGE_SUB_TEAMS'
+  | 'MANAGE_MAP'
+  | 'MANAGE_ALL_EVENTS'
+  | 'MANAGE_OWN_EVENTS';
 
 export interface User {
   id: string;
@@ -82,8 +85,11 @@ export interface CampAsset {
 export interface EventItem {
   id: string;
   title: string;
+  description?: string;
   host: string;
+  campId?: string; // Optional: If null, it's an official event. If set, belongs to that camp.
   startTime: string; // ISO string
+  endTime?: string; // ISO string
   location: string;
   type: 'MUSIC' | 'WORKSHOP' | 'FOOD' | 'PERFORMANCE';
 }
@@ -174,10 +180,13 @@ export interface MapOverlay {
 }
 
 export interface MapPin {
-  id: number;
-  type: 'camp' | 'art' | 'medical' | 'infra';
+  id: string;
+  type: 'camp' | 'art' | 'medical' | 'infra' | 'toilet';
   x: number; // Percentage 0-100
   y: number; // Percentage 0-100
+  lat?: number; // Real GPS Lat
+  lng?: number; // Real GPS Lng
   name: string;
-  desc: string;
+  description?: string;
+  campId?: string; // Link to camp logic
 }
