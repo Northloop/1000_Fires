@@ -6,7 +6,7 @@ import {
   Fuel, Activity, ClipboardList, Flame, Truck, Map as MapIcon, 
   Moon, AlertTriangle, CheckCircle2, Grid, ArrowLeft, Droplets,
   AlertOctagon, Search, FileText, Scale, Eye, Thermometer,
-  MoreHorizontal, Plus
+  MoreHorizontal, Plus, Flag, Tent, Brain, Waves, Bike
 } from 'lucide-react';
 import { MOCK_DEPARTMENTS, MOCK_SHIFTS, MOCK_INCIDENTS, MOCK_CAMPS } from '../constants';
 import { Department, UserRole } from '../types';
@@ -48,6 +48,13 @@ const MOCK_SANCTUARY_GUESTS = [
   { id: 'G-Beta', timeIn: '45m', status: 'ACTIVE', acuity: 'YELLOW', needs: 'De-escalation' },
 ];
 
+const MOCK_RANGER_PATROLS = [
+    { name: 'Dirt 1 (Alpha)', sector: 'Sector 2', status: 'PATROL', type: 'Dirt', radio: 'Ch 1' },
+    { name: 'Dirt 4 (Bravo)', sector: 'Sector 4', status: 'INCIDENT', type: 'Dirt', radio: 'Ch 1' },
+    { name: 'Khaki 9', sector: 'HQ', status: 'AVAILABLE', type: 'Khaki', radio: 'Ch 2' },
+    { name: 'Green Dot 3', sector: 'Open Playa', status: 'PATROL', type: 'Echelon', radio: 'Ch 3' },
+];
+
 const DepartmentDashboard: React.FC = () => {
   const { activeMembership } = useUser();
   const [viewingDeptId, setViewingDeptId] = useState<string | null>(null);
@@ -60,20 +67,6 @@ const DepartmentDashboard: React.FC = () => {
   const targetDeptId = isOrganizer 
     ? (viewingDeptId || 'UNIFIED') 
     : activeMembership?.entityId;
-
-  // Handle Camp Leads or Participants trying to access this route
-  if (activeMembership?.role === UserRole.CAMP_LEAD || activeMembership?.role === UserRole.PARTICIPANT || activeMembership?.role === UserRole.TEAM_LEAD || activeMembership?.role === UserRole.VOLUNTEER) {
-      return (
-          <div className="flex flex-col items-center justify-center h-full text-center p-8">
-              <Shield className="w-16 h-16 text-gray-600 mb-4" />
-              <h2 className="text-2xl font-bold text-white mb-2">Restricted Access</h2>
-              <p className="text-gray-400 max-w-md">
-                  This dashboard is for Department Heads and Event Operations only. 
-                  Please switch your context to a Department role or return to the Dashboard.
-              </p>
-          </div>
-      );
-  }
 
   // Helper to get status colors
   const getStatusColor = (status: 'good' | 'warning' | 'critical') => {
@@ -93,7 +86,8 @@ const DepartmentDashboard: React.FC = () => {
         case 'DMV': return <Truck className={`${className} text-yellow-500`} />;
         case 'PLACEMENT': return <MapIcon className={`${className} text-green-600`} />;
         case 'SANCTUARY': return <Moon className={`${className} text-purple-400`} />;
-        default: return <Shield className={`${className} text-green-500`} />;
+        case 'RANGERS': return <Eye className={`${className} text-green-500`} />;
+        default: return <Shield className={`${className} text-gray-500`} />;
     }
   };
 
@@ -581,13 +575,16 @@ const DepartmentDashboard: React.FC = () => {
                             <Eye className="w-5 h-5 mr-2 text-green-500" /> Active Patrols
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                             {['Dirt 1 (Alpha)', 'Dirt 4 (Bravo)', 'Intercept 2', 'Khaki 9'].map((p, i) => (
+                             {MOCK_RANGER_PATROLS.map((p, i) => (
                                  <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
                                      <div className="flex items-center gap-2">
-                                         <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]"></div>
-                                         <span className="text-sm font-bold text-white">{p}</span>
+                                         <div className={`w-2 h-2 rounded-full ${p.status === 'INCIDENT' ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></div>
+                                         <div>
+                                            <span className="text-sm font-bold text-white block">{p.name}</span>
+                                            <span className="text-xs text-gray-500">{p.type} • {p.radio}</span>
+                                         </div>
                                      </div>
-                                     <span className="text-xs text-gray-500">Sector {i+2}</span>
+                                     <span className="text-xs text-gray-400 font-mono">{p.sector}</span>
                                  </div>
                              ))}
                         </div>
