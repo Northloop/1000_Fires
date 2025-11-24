@@ -1,47 +1,305 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Layers, MapPin, Save, Plus, Trash2, Crosshair, Tent, Palette, 
-  HeartPulse, Hammer, Info, Image as ImageIcon, MousePointer2, 
-  Hexagon, Waypoints, Upload, X, Check
+  Layers, MapPin, Save, Trash2, Hexagon, Waypoints, 
+  MousePointer2, Info, Check, X, Plus, Minus
 } from 'lucide-react';
-import { MOCK_MAP_PINS, MOCK_MAP_LAYERS, MOCK_CAMPS } from '../constants';
-import { MapLayer, MapPin as MapPinType } from '../types';
+import { MOCK_MAP_PINS } from '../constants';
+import { MapPin as MapPinType } from '../types';
 import { useUser } from '../context/UserContext';
 
-// Extended Types for internal use
+// Define Leaflet types globally to satisfy TS
+declare global {
+  interface Window {
+    L: any;
+  }
+}
+
 interface MapShape {
   id: string;
-  type: 'polygon' | 'path';
-  points: {x: number, y: number}[];
+  type: 'polygon' | 'polyline';
+  latlngs: {lat: number, lng: number}[];
   color: string;
   name: string;
-  opacity: number;
 }
 
 const MapBuilder: React.FC = () => {
   const { activeMembership, checkPermission } = useUser();
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
   
   // -- STATE --
-  const [layers, setLayers] = useState<MapLayer[]>(MOCK_MAP_LAYERS);
   const [pins, setPins] = useState<MapPinType[]>(MOCK_MAP_PINS);
   const [shapes, setShapes] = useState<MapShape[]>([]);
   
-  // Tool State
-  const [activeTool, setActiveTool] = useState<'select' | 'pin' | 'polygon' | 'path'>('select');
-  const [backgroundImage, setBackgroundImage] = useState<string>(''); // URL for custom satellite map
-  const [bgOpacity, setBgOpacity] = useState(1);
-  
-  // Selection & Editing
+  // Tools: 'select' | 'pin' | 'polygon' | 'polyline'
+  const [activeTool, setActiveTool] = useState<string>('select');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<'pin' | 'shape' | null>(null);
   
   // Drawing State
-  const [drawPoints, setDrawPoints] = useState<{x: number, y: number}[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [drawPoints, setDrawPoints] = useState<{lat: number, lng: number}[]>([]);
+  const [tempLayer, setTempLayer] = useState<any>(null);
+  
+  // Layer State
+  const [activeBaseLayer, setActiveBaseLayer] = useState<'satellite' | 'dark'>('satellite');
 
-  const mapRef = useRef<HTMLDivElement>(null);
+  // -- REFS FOR EVENT HANDLERS (Fix Stale Closures) --
+  const activeToolRef = useRef(activeTool);
+  const drawPointsRef = useRef(drawPoints);
+  
+  useEffect(() => { activeToolRef.current = activeTool; }, [activeTool]);
+  useEffect(() => { drawPointsRef.current = drawPoints; }, [drawPoints]);
+
+  // -- INITIALIZATION --
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    if (mapInstanceRef.current) return;
+
+    const L = window.L;
+    
+    // Init Map centered on Voyageurs National Park, MN
+    const map = L.map(mapContainerRef.current, {
+        zoomControl: false, 
+        minZoom: 4,
+        maxZoom: 22
+    }).setView([48.4558, -92.8384], 15);
+    
+    mapInstanceRef.current = map;
+
+    // --- 1. Base Layers Setup ---
+    const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri',
+      maxZoom: 22,
+      maxNativeZoom: 17 // Esri Satellite often doesn't go deeper than 17/18
+    });
+    
+    const dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CartoDB',
+      subdomains: 'abcd',
+      maxZoom: 22,
+      maxNativeZoom: 20
+    });
+
+    // Add default layer (Satellite)
+    satellite.addTo(map);
+    
+    // Store layers for toggling later
+    (map as any)._layers_custom = { satellite, dark };
+
+    // --- 2. Resize Observer ---
+    const resizeObserver = new ResizeObserver(() => {
+        map.invalidateSize();
+    });
+    resizeObserver.observe(mapContainerRef.current);
+
+    // --- 3. Click Handler (Attached Once, Uses Refs) ---
+    map.on('click', (e: any) => {
+        const tool = activeToolRef.current;
+        const latlng = e.latlng;
+
+        if (tool === 'select') {
+            // Deselect if clicking on empty map
+            setSelectedId(null);
+            setSelectedType(null);
+            return;
+        }
+
+        if (tool === 'pin') {
+            const newPin: MapPinType = {
+                id: `pin-${Date.now()}`,
+                type: 'camp',
+                name: 'New Location',
+                x: 0,
+                y: 0,
+                lat: latlng.lat,
+                lng: latlng.lng
+            };
+            setPins(prev => [...prev, newPin]);
+            
+            // Auto-select the new pin
+            setActiveTool('select');
+            setSelectedId(newPin.id);
+            setSelectedType('pin');
+        }
+
+        if (tool === 'polygon' || tool === 'polyline') {
+            setDrawPoints(prev => [...prev, latlng]);
+        }
+    });
+
+    return () => {
+      resizeObserver.disconnect();
+      map.remove();
+      mapInstanceRef.current = null;
+    };
+  }, []);
+
+  // -- BASE LAYER TOGGLE --
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    
+    const { satellite, dark } = (map as any)._layers_custom;
+    
+    if (activeBaseLayer === 'satellite') {
+        if (map.hasLayer(dark)) map.removeLayer(dark);
+        if (!map.hasLayer(satellite)) map.addLayer(satellite);
+    } else {
+        if (map.hasLayer(satellite)) map.removeLayer(satellite);
+        if (!map.hasLayer(dark)) map.addLayer(dark);
+    }
+  }, [activeBaseLayer]);
+
+  // -- RENDER PINS & SHAPES --
+  useEffect(() => {
+      const map = mapInstanceRef.current;
+      if (!map) return;
+      const L = window.L;
+
+      // Clear existing custom overlays (markers/shapes)
+      // Note: We use a specific class or property to identify OUR layers to avoid removing base tiles
+      map.eachLayer((layer: any) => {
+          if (layer instanceof L.Marker || layer instanceof L.Polygon || layer instanceof L.Polyline) {
+             // Don't remove the temporary drawing layer
+             if (layer !== tempLayer) {
+                 map.removeLayer(layer);
+             }
+          }
+      });
+
+      // Render Pins
+      pins.forEach(pin => {
+          if (!pin.lat || !pin.lng) return;
+
+          const getIconColor = () => {
+              switch(pin.type) {
+                  case 'medical': return '#ef4444';
+                  case 'art': return '#a855f7';
+                  case 'infra': return '#f97316';
+                  case 'toilet': return '#3b82f6';
+                  default: return '#22c55e';
+              }
+          };
+
+          const icon = L.divIcon({
+              className: 'custom-pin',
+              html: `<div style="
+                background-color: ${getIconColor()}; 
+                width: 24px; 
+                height: 24px; 
+                border-radius: 50%; 
+                border: 2px solid white;
+                box-shadow: 0 0 10px rgba(0,0,0,0.5);
+                display: flex; align-items: center; justify-content: center;
+                transform: scale(${selectedId === pin.id ? 1.25 : 1});
+                transition: transform 0.2s;
+              ">
+               <div style="width: 8px; height: 8px; background: white; border-radius: 50%"></div>
+              </div>`,
+              iconSize: [24, 24],
+              iconAnchor: [12, 12]
+          });
+
+          const marker = L.marker([pin.lat, pin.lng], { 
+              icon: icon, 
+              draggable: true,
+              autoPan: true 
+          }).addTo(map);
+
+          marker.on('click', (e: any) => {
+              L.DomEvent.stopPropagation(e);
+              if (activeToolRef.current === 'select') {
+                  setSelectedId(pin.id);
+                  setSelectedType('pin');
+              }
+          });
+
+          marker.on('dragend', (e: any) => {
+              const newPos = e.target.getLatLng();
+              setPins(prev => prev.map(p => p.id === pin.id ? { ...p, lat: newPos.lat, lng: newPos.lng } : p));
+          });
+          
+          if (selectedId === pin.id) {
+             marker.setZIndexOffset(1000);
+          }
+      });
+
+      // Render Shapes
+      shapes.forEach(shape => {
+          let layer;
+          const opts = {
+              color: shape.color,
+              weight: selectedId === shape.id ? 4 : 2,
+              opacity: 1,
+              fillOpacity: shape.type === 'polygon' ? 0.3 : 0,
+              dashArray: null
+          };
+
+          if (shape.type === 'polygon') {
+              layer = L.polygon(shape.latlngs, opts);
+          } else {
+              layer = L.polyline(shape.latlngs, opts);
+          }
+
+          layer.addTo(map);
+          
+          layer.on('click', (e: any) => {
+              L.DomEvent.stopPropagation(e);
+               if (activeToolRef.current === 'select') {
+                  setSelectedId(shape.id);
+                  setSelectedType('shape');
+               }
+          });
+      });
+
+  }, [pins, shapes, selectedId]); // removed tempLayer from deps to avoid flickers
+
+  // -- DRAWING PREVIEW --
+  useEffect(() => {
+     const map = mapInstanceRef.current;
+     if (!map) return;
+     const L = window.L;
+
+     if (tempLayer) {
+         map.removeLayer(tempLayer);
+     }
+
+     if (drawPoints.length > 0) {
+         let layer;
+         if (activeTool === 'polygon') {
+             layer = L.polygon(drawPoints, { color: '#22c55e', dashArray: '5, 10', fillOpacity: 0.1 });
+         } else {
+             layer = L.polyline(drawPoints, { color: '#f97316', dashArray: '5, 10' });
+         }
+         layer.addTo(map);
+         setTempLayer(layer);
+     } else {
+         setTempLayer(null);
+     }
+  }, [drawPoints, activeTool]);
+
+
+  const finishDrawing = () => {
+      if (drawPoints.length < 2) return;
+      
+      const newShape: MapShape = {
+          id: `shape-${Date.now()}`,
+          type: activeTool === 'polygon' ? 'polygon' : 'polyline',
+          latlngs: [...drawPoints],
+          color: activeTool === 'polygon' ? '#22c55e' : '#f97316',
+          name: activeTool === 'polygon' ? 'New Zone' : 'New Path'
+      };
+      
+      setShapes(prev => [...prev, newShape]);
+      setDrawPoints([]);
+      setActiveTool('select');
+      setSelectedId(newShape.id);
+      setSelectedType('shape');
+  };
+
+  const zoomIn = () => mapInstanceRef.current?.zoomIn();
+  const zoomOut = () => mapInstanceRef.current?.zoomOut();
 
   // -- PERMISSION CHECK --
   if (!activeMembership || !checkPermission('MANAGE_MAP')) {
@@ -54,485 +312,237 @@ const MapBuilder: React.FC = () => {
     )
   }
 
-  // -- HELPERS --
+  const getSelectedPin = () => pins.find(p => p.id === selectedId);
+  const getSelectedShape = () => shapes.find(s => s.id === selectedId);
 
-  const getRelativeCoords = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!mapRef.current) return { x: 0, y: 0 };
-    const rect = mapRef.current.getBoundingClientRect();
-    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-    
-    return {
-      x: Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)),
-      y: Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100))
-    };
-  };
-
-  const getPinIcon = (type: string) => {
-    switch (type) {
-        case 'camp': return <Tent className="w-4 h-4" />;
-        case 'art': return <Palette className="w-4 h-4" />;
-        case 'medical': return <HeartPulse className="w-4 h-4" />;
-        case 'infra': return <Hammer className="w-4 h-4" />;
-        default: return <MapPin className="w-4 h-4" />;
-    }
-  };
-
-  const getPinColor = (type: string) => {
-    switch (type) {
-      case 'art': return 'text-purple-500';
-      case 'medical': return 'text-red-500';
-      case 'infra': return 'text-orange-500';
-      default: return 'text-brand-500';
-    }
-  };
-
-  // -- HANDLERS --
-
-  const handleMapMouseDown = (e: React.MouseEvent) => {
-    const coords = getRelativeCoords(e);
-
-    if (activeTool === 'pin') {
-       const newPin: MapPinType = {
-           id: `pin-${Date.now()}`,
-           type: 'camp',
-           name: 'New Location',
-           x: coords.x,
-           y: coords.y,
-           description: ''
-       };
-       setPins([...pins, newPin]);
-       setSelectedId(newPin.id);
-       setSelectedType('pin');
-       setActiveTool('select'); // Auto switch back to select after dropping
-    } else if (activeTool === 'polygon' || activeTool === 'path') {
-       setDrawPoints([...drawPoints, coords]);
-    } else if (activeTool === 'select') {
-       // Deselect if clicking empty space
-       if (e.target === mapRef.current || (e.target as HTMLElement).id === 'map-bg') {
-           setSelectedId(null);
-           setSelectedType(null);
-       }
-    }
-  };
-
-  const finishDrawing = () => {
-      if (drawPoints.length < 2) {
-          setDrawPoints([]);
-          return;
-      }
-      const newShape: MapShape = {
-          id: `shape-${Date.now()}`,
-          type: activeTool === 'polygon' ? 'polygon' : 'path',
-          points: drawPoints,
-          color: activeTool === 'polygon' ? '#22c55e' : '#f97316',
-          name: activeTool === 'polygon' ? 'New Zone' : 'New Path',
-          opacity: 0.5
-      };
-      setShapes([...shapes, newShape]);
-      setDrawPoints([]);
-      setSelectedId(newShape.id);
-      setSelectedType('shape');
-      setActiveTool('select');
-  };
-
-  const handlePinMouseDown = (e: React.MouseEvent, id: string) => {
-      e.stopPropagation();
-      if (activeTool === 'select') {
-          setSelectedId(id);
-          setSelectedType('pin');
-          setIsDragging(true);
-          // Calculate offset if needed, for now center drag
-      }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-      if (isDragging && selectedId && selectedType === 'pin') {
-          const coords = getRelativeCoords(e);
-          setPins(pins.map(p => p.id === selectedId ? { ...p, x: coords.x, y: coords.y } : p));
-      }
-  };
-
-  const handleMouseUp = () => {
-      setIsDragging(false);
-  };
-
-  // -- RENDER HELPERS --
-
-  const renderShapePreview = () => {
-      if (drawPoints.length === 0) return null;
-      const pointsStr = drawPoints.map(p => `${p.x},${p.y}`).join(' ');
-      
-      return activeTool === 'polygon' ? (
-          <polygon points={pointsStr} fill="rgba(34, 197, 94, 0.3)" stroke="#22c55e" strokeWidth="0.5" />
-      ) : (
-          <polyline points={pointsStr} fill="none" stroke="#f97316" strokeWidth="0.5" strokeDasharray="1 0.5" />
-      );
-  };
-
-  // -- UI COMPONENTS --
-
-  const Sidebar = () => {
-      const selectedPin = pins.find(p => p.id === selectedId);
-      const selectedShape = shapes.find(s => s.id === selectedId);
-
-      return (
-        <div className="w-full lg:w-96 bg-night-800 rounded-xl border border-white/5 flex flex-col overflow-hidden shadow-2xl z-10">
-            {/* Header */}
-            <div className="p-4 border-b border-white/5 flex justify-between items-center bg-night-900">
+  return (
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-8rem)] gap-4">
+        {/* SIDEBAR CONTROLS */}
+        <div className="w-full lg:w-96 bg-night-800 rounded-xl border border-white/5 flex flex-col shadow-2xl z-10 order-2 lg:order-1">
+            <div className="p-4 border-b border-white/5 bg-night-900 flex justify-between items-center rounded-t-xl">
                 <h2 className="text-lg font-bold text-white flex items-center">
-                    <Layers className="w-5 h-5 mr-2 text-brand-500" />
-                    Map Properties
+                    <Layers className="w-5 h-5 mr-2 text-brand-500" /> Map Builder
                 </h2>
-                <div className="flex gap-2">
-                    <button className="p-2 text-gray-400 hover:text-white" title="Export Map Data">
-                        <Save className="w-4 h-4" />
-                    </button>
-                </div>
+                <button 
+                  onClick={() => alert('Map Configuration Saved!')}
+                  className="bg-brand-600 hover:bg-brand-500 text-white p-2 rounded-lg transition-colors shadow-lg shadow-brand-900/50"
+                >
+                    <Save className="w-4 h-4" />
+                </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
-                
-                {/* Global Map Settings */}
+                {/* Global Settings */}
                 {!selectedId && (
                     <div className="space-y-4 animate-in fade-in">
                         <div className="bg-white/5 p-4 rounded-lg border border-white/5">
-                            <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center">
-                                <ImageIcon className="w-3 h-3 mr-2" /> Base Layer
-                            </h3>
-                            <div className="space-y-3">
-                                <div>
-                                    <label className="block text-xs text-gray-500 mb-1">Custom Image URL</label>
-                                    <div className="flex gap-2">
-                                        <input 
-                                            type="text" 
-                                            placeholder="https://..."
-                                            value={backgroundImage}
-                                            onChange={(e) => setBackgroundImage(e.target.value)}
-                                            className="flex-1 bg-night-900 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-brand-500"
-                                        />
-                                        <button className="bg-white/10 p-1.5 rounded hover:bg-white/20">
-                                            <Upload className="w-3 h-3 text-white" />
-                                        </button>
-                                    </div>
-                                    <p className="text-[10px] text-gray-500 mt-1">Paste a link to a satellite image or map screenshot.</p>
-                                </div>
-                                {backgroundImage && (
-                                    <div>
-                                        <label className="block text-xs text-gray-500 mb-1">Opacity: {Math.round(bgOpacity * 100)}%</label>
-                                        <input 
-                                            type="range" 
-                                            min="0" max="1" step="0.1" 
-                                            value={bgOpacity}
-                                            onChange={(e) => setBgOpacity(parseFloat(e.target.value))}
-                                            className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-                                        />
-                                    </div>
-                                )}
+                            <h3 className="text-xs font-bold text-gray-400 uppercase mb-3">Base Map Layer</h3>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button 
+                                    onClick={() => setActiveBaseLayer('satellite')}
+                                    className={`p-3 rounded-lg border text-sm font-bold transition-all flex flex-col items-center justify-center gap-2 ${activeBaseLayer === 'satellite' ? 'bg-brand-600 border-brand-500 text-white shadow-lg' : 'bg-night-900 border-white/10 text-gray-400 hover:border-white/30 hover:bg-white/5'}`}
+                                >
+                                    <div className="w-8 h-8 rounded-full bg-green-900 border border-green-700"></div>
+                                    Satellite
+                                </button>
+                                <button 
+                                    onClick={() => setActiveBaseLayer('dark')}
+                                    className={`p-3 rounded-lg border text-sm font-bold transition-all flex flex-col items-center justify-center gap-2 ${activeBaseLayer === 'dark' ? 'bg-brand-600 border-brand-500 text-white shadow-lg' : 'bg-night-900 border-white/10 text-gray-400 hover:border-white/30 hover:bg-white/5'}`}
+                                >
+                                    <div className="w-8 h-8 rounded-full bg-gray-900 border border-gray-700"></div>
+                                    Dark Vector
+                                </button>
                             </div>
                         </div>
 
-                        <div className="bg-white/5 p-4 rounded-lg border border-white/5">
-                            <h3 className="text-xs font-bold text-gray-400 uppercase mb-3">Statistics</h3>
-                            <div className="grid grid-cols-2 gap-2 text-center">
-                                <div className="bg-night-900 p-2 rounded">
-                                    <span className="block text-lg font-bold text-white">{pins.length}</span>
-                                    <span className="text-[10px] text-gray-500">Pins</span>
-                                </div>
-                                <div className="bg-night-900 p-2 rounded">
-                                    <span className="block text-lg font-bold text-white">{shapes.length}</span>
-                                    <span className="text-[10px] text-gray-500">Zones</span>
-                                </div>
-                            </div>
+                        <div className="p-4 rounded-lg border border-blue-500/20 bg-blue-500/10">
+                            <h3 className="text-xs font-bold text-blue-400 uppercase mb-2 flex items-center"><Info className="w-3 h-3 mr-1" /> Controls</h3>
+                            <ul className="text-xs text-gray-300 space-y-2">
+                                <li className="flex items-start"><MousePointer2 className="w-3 h-3 mr-2 mt-0.5" /> Select items to edit details.</li>
+                                <li className="flex items-start"><MapPin className="w-3 h-3 mr-2 mt-0.5" /> Place pins and drag to move.</li>
+                                <li className="flex items-start"><Hexagon className="w-3 h-3 mr-2 mt-0.5" /> Click multiple points to draw zones.</li>
+                            </ul>
                         </div>
                     </div>
                 )}
 
-                {/* Selected Pin Editor */}
-                {selectedType === 'pin' && selectedPin && (
+                {/* Pin Editor */}
+                {selectedType === 'pin' && getSelectedPin() && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-sm font-bold text-brand-500 uppercase flex items-center">
-                                <MapPin className="w-3 h-3 mr-2" /> Edit Location
+                        <div className="flex justify-between items-center mb-2 bg-white/5 p-3 rounded-lg border border-white/5">
+                            <h3 className="text-sm font-bold text-white uppercase flex items-center">
+                                <MapPin className="w-4 h-4 mr-2 text-brand-500" /> Edit Pin
                             </h3>
                             <button 
                                 onClick={() => {
-                                    setPins(pins.filter(p => p.id !== selectedPin.id));
+                                    setPins(pins.filter(p => p.id !== selectedId));
                                     setSelectedId(null);
-                                    setSelectedType(null);
-                                }} 
-                                className="text-red-500 hover:text-red-400 p-1 bg-red-500/10 rounded"
+                                }}
+                                className="text-red-500 hover:bg-red-500/20 p-2 rounded transition-colors"
                             >
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-4 h-4" />
                             </button>
                         </div>
                         
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                              <div>
-                                <label className="block text-xs text-gray-500 mb-1">Name</label>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Label</label>
                                 <input 
-                                    value={selectedPin.name}
-                                    onChange={(e) => setPins(pins.map(p => p.id === selectedPin.id ? {...p, name: e.target.value} : p))}
-                                    className="w-full bg-night-900 border border-white/10 rounded px-3 py-2 text-white text-sm outline-none focus:border-brand-500"
+                                    value={getSelectedPin()?.name}
+                                    onChange={(e) => setPins(pins.map(p => p.id === selectedId ? {...p, name: e.target.value} : p))}
+                                    className="w-full bg-night-900 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                                 />
                              </div>
-                             <div className="grid grid-cols-2 gap-2">
-                                 <div>
-                                    <label className="block text-xs text-gray-500 mb-1">Type</label>
+                             <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Type</label>
                                     <select 
-                                        value={selectedPin.type}
-                                        onChange={(e) => setPins(pins.map(p => p.id === selectedPin.id ? {...p, type: e.target.value as any} : p))}
-                                        className="w-full bg-night-900 border border-white/10 rounded px-3 py-2 text-white text-sm outline-none"
+                                        value={getSelectedPin()?.type}
+                                        onChange={(e) => setPins(pins.map(p => p.id === selectedId ? {...p, type: e.target.value as any} : p))}
+                                        className="w-full bg-night-900 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm outline-none focus:border-brand-500"
                                     >
                                         <option value="camp">Camp</option>
                                         <option value="art">Art</option>
                                         <option value="medical">Medical</option>
                                         <option value="infra">Infra</option>
+                                        <option value="toilet">Services</option>
                                     </select>
-                                 </div>
-                                 <div>
-                                    <label className="block text-xs text-gray-500 mb-1">Linked Camp</label>
-                                    <select 
-                                        value={selectedPin.campId || ''}
-                                        onChange={(e) => setPins(pins.map(p => p.id === selectedPin.id ? {...p, campId: e.target.value} : p))}
-                                        className="w-full bg-night-900 border border-white/10 rounded px-3 py-2 text-white text-sm outline-none"
-                                    >
-                                        <option value="">None</option>
-                                        {MOCK_CAMPS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                    </select>
-                                 </div>
-                             </div>
-                             <div>
-                                <label className="block text-xs text-gray-500 mb-1">Coordinates (X / Y)</label>
-                                <div className="flex gap-2">
-                                    <input value={selectedPin.x.toFixed(2)} readOnly className="w-1/2 bg-night-900/50 border border-white/5 rounded px-2 py-1 text-xs text-gray-400" />
-                                    <input value={selectedPin.y.toFixed(2)} readOnly className="w-1/2 bg-night-900/50 border border-white/5 rounded px-2 py-1 text-xs text-gray-400" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Coordinates</label>
+                                    <div className="bg-night-900 border border-white/10 rounded-lg px-3 py-2.5 text-gray-400 text-xs font-mono truncate">
+                                        {getSelectedPin()?.lat?.toFixed(5)}, {getSelectedPin()?.lng?.toFixed(5)}
+                                    </div>
                                 </div>
                              </div>
+                             
+                             <button 
+                                onClick={() => setSelectedId(null)}
+                                className="w-full py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg text-sm font-medium transition-colors border border-white/5"
+                             >
+                                Done Editing
+                             </button>
                         </div>
                     </div>
                 )}
 
-                {/* Selected Shape Editor */}
-                {selectedType === 'shape' && selectedShape && (
+                {/* Shape Editor */}
+                {selectedType === 'shape' && getSelectedShape() && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-sm font-bold text-brand-500 uppercase flex items-center">
-                                <Hexagon className="w-3 h-3 mr-2" /> Edit Zone
+                        <div className="flex justify-between items-center mb-2 bg-white/5 p-3 rounded-lg border border-white/5">
+                            <h3 className="text-sm font-bold text-white uppercase flex items-center">
+                                <Hexagon className="w-4 h-4 mr-2 text-brand-500" /> Edit Zone
                             </h3>
                             <button 
                                 onClick={() => {
-                                    setShapes(shapes.filter(s => s.id !== selectedShape.id));
+                                    setShapes(shapes.filter(s => s.id !== selectedId));
                                     setSelectedId(null);
-                                    setSelectedType(null);
-                                }} 
-                                className="text-red-500 hover:text-red-400 p-1 bg-red-500/10 rounded"
+                                }}
+                                className="text-red-500 hover:bg-red-500/20 p-2 rounded transition-colors"
                             >
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-4 h-4" />
                             </button>
                         </div>
                         
-                         <div className="space-y-3">
+                        <div className="space-y-4">
                              <div>
-                                <label className="block text-xs text-gray-500 mb-1">Label</label>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Label</label>
                                 <input 
-                                    value={selectedShape.name}
-                                    onChange={(e) => setShapes(shapes.map(s => s.id === selectedShape.id ? {...s, name: e.target.value} : s))}
-                                    className="w-full bg-night-900 border border-white/10 rounded px-3 py-2 text-white text-sm outline-none focus:border-brand-500"
+                                    value={getSelectedShape()?.name}
+                                    onChange={(e) => setShapes(shapes.map(s => s.id === selectedId ? {...s, name: e.target.value} : s))}
+                                    className="w-full bg-night-900 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                                 />
                              </div>
-                             <div className="grid grid-cols-2 gap-2">
-                                 <div>
-                                    <label className="block text-xs text-gray-500 mb-1">Color</label>
-                                    <input 
-                                        type="color"
-                                        value={selectedShape.color}
-                                        onChange={(e) => setShapes(shapes.map(s => s.id === selectedShape.id ? {...s, color: e.target.value} : s))}
-                                        className="w-full h-9 bg-night-900 border border-white/10 rounded cursor-pointer"
-                                    />
-                                 </div>
-                                 <div>
-                                    <label className="block text-xs text-gray-500 mb-1">Opacity</label>
-                                    <input 
-                                        type="number"
-                                        min="0.1" max="1" step="0.1"
-                                        value={selectedShape.opacity}
-                                        onChange={(e) => setShapes(shapes.map(s => s.id === selectedShape.id ? {...s, opacity: parseFloat(e.target.value)} : s))}
-                                        className="w-full bg-night-900 border border-white/10 rounded px-3 py-2 text-white text-sm outline-none"
-                                    />
-                                 </div>
+                             <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Color</label>
+                                <div className="flex gap-3">
+                                    {['#f97316', '#ef4444', '#22c55e', '#3b82f6', '#a855f7'].map(color => (
+                                        <button
+                                            key={color}
+                                            onClick={() => setShapes(shapes.map(s => s.id === selectedId ? {...s, color} : s))}
+                                            className={`w-10 h-10 rounded-full border-2 transition-transform hover:scale-110 ${getSelectedShape()?.color === color ? 'border-white scale-110 shadow-lg' : 'border-transparent'}`}
+                                            style={{ backgroundColor: color }}
+                                        />
+                                    ))}
+                                </div>
                              </div>
+
+                             <button 
+                                onClick={() => setSelectedId(null)}
+                                className="w-full py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg text-sm font-medium transition-colors border border-white/5"
+                             >
+                                Done Editing
+                             </button>
                         </div>
                     </div>
                 )}
             </div>
         </div>
-      );
 
-  };
-
-  return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-8rem)] gap-4">
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Main Map Canvas Area */}
-      <div className="flex-1 flex flex-col bg-black rounded-xl border border-white/5 overflow-hidden relative shadow-2xl">
-         
-         {/* Toolbar */}
-         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30 bg-night-800/90 backdrop-blur border border-white/10 rounded-full p-1.5 flex gap-2 shadow-xl">
-             <button 
-                onClick={() => setActiveTool('select')}
-                className={`p-2.5 rounded-full transition-all ${activeTool === 'select' ? 'bg-brand-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
-                title="Select & Move (V)"
-             >
-                 <MousePointer2 className="w-5 h-5" />
-             </button>
-             <div className="w-px bg-white/10 my-1"></div>
-             <button 
-                onClick={() => setActiveTool('pin')}
-                className={`p-2.5 rounded-full transition-all ${activeTool === 'pin' ? 'bg-brand-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
-                title="Place Pin (P)"
-             >
-                 <MapPin className="w-5 h-5" />
-             </button>
-             <button 
-                onClick={() => setActiveTool('polygon')}
-                className={`p-2.5 rounded-full transition-all ${activeTool === 'polygon' ? 'bg-brand-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
-                title="Draw Zone (Z)"
-             >
-                 <Hexagon className="w-5 h-5" />
-             </button>
-             <button 
-                onClick={() => setActiveTool('path')}
-                className={`p-2.5 rounded-full transition-all ${activeTool === 'path' ? 'bg-brand-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
-                title="Draw Path (L)"
-             >
-                 <Waypoints className="w-5 h-5" />
-             </button>
-         </div>
-
-         {/* Floating Action (Finish Draw) */}
-         {drawPoints.length > 0 && (
-             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 bg-night-800 border border-brand-500 rounded-lg p-2 flex gap-3 shadow-2xl animate-in slide-in-from-bottom-4">
-                 <button onClick={() => setDrawPoints([])} className="px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/10 rounded">
-                     Cancel
-                 </button>
-                 <button onClick={finishDrawing} className="px-3 py-1.5 text-xs font-bold bg-brand-600 hover:bg-brand-500 text-white rounded flex items-center shadow-lg">
-                     <Check className="w-3 h-3 mr-1.5" /> Finish {activeTool === 'polygon' ? 'Zone' : 'Path'}
-                 </button>
-             </div>
-         )}
-
-         {/* Canvas */}
-         <div 
-            ref={mapRef}
-            className={`flex-1 relative overflow-hidden bg-[#0f172a] ${activeTool === 'select' ? 'cursor-default' : 'cursor-crosshair'}`}
-            onMouseDown={handleMapMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-         >
-             {/* 1. Background Layer */}
-             <div className="absolute inset-0 pointer-events-none">
-                 {backgroundImage ? (
-                     <img 
-                        src={backgroundImage} 
-                        alt="Map Background" 
-                        className="w-full h-full object-cover"
-                        style={{ opacity: bgOpacity }} 
-                     />
-                 ) : (
-                     <div className="w-full h-full bg-[radial-gradient(circle_at_center,_#1e293b_0%,_#020617_100%)]">
-                        {/* Grid Pattern Fallback */}
-                        <svg className="w-full h-full opacity-20">
-                            <defs>
-                                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5"/>
-                                </pattern>
-                            </defs>
-                            <rect width="100%" height="100%" fill="url(#grid)" />
-                        </svg>
-                     </div>
-                 )}
-             </div>
-
-             {/* 2. SVG Shape Layer */}
-             <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 10 }}>
-                 {/* Existing Shapes */}
-                 {shapes.map(shape => {
-                     const pointsStr = shape.points.map(p => `${p.x},${p.y}`).join(' ');
-                     const isSelected = selectedId === shape.id;
-                     
-                     return shape.type === 'polygon' ? (
-                        <polygon 
-                            key={shape.id}
-                            points={pointsStr}
-                            fill={shape.color}
-                            fillOpacity={shape.opacity}
-                            stroke={isSelected ? '#fff' : shape.color}
-                            strokeWidth={isSelected ? '0.5' : '0.2'}
-                            className="pointer-events-auto cursor-pointer hover:opacity-80 transition-opacity"
-                            onMouseDown={(e) => {
-                                e.stopPropagation();
-                                if(activeTool === 'select') {
-                                    setSelectedId(shape.id);
-                                    setSelectedType('shape');
-                                }
-                            }}
-                        />
-                     ) : (
-                        <polyline
-                            key={shape.id}
-                            points={pointsStr}
-                            fill="none"
-                            stroke={shape.color}
-                            strokeWidth={isSelected ? '0.8' : '0.4'}
-                            strokeDasharray="1 0.5"
-                            className="pointer-events-auto cursor-pointer hover:opacity-80 transition-opacity"
-                            onMouseDown={(e) => {
-                                e.stopPropagation();
-                                if(activeTool === 'select') {
-                                    setSelectedId(shape.id);
-                                    setSelectedType('shape');
-                                }
-                            }}
-                        />
-                     );
-                 })}
-                 
-                 {/* Current Drawing Preview */}
-                 {renderShapePreview()}
-
-                 {/* Drawing Points (Vertices) */}
-                 {drawPoints.map((p, i) => (
-                     <circle key={i} cx={p.x + "%"} cy={p.y + "%"} r="3" fill="white" stroke="#f97316" strokeWidth="2" />
-                 ))}
-             </svg>
-
-             {/* 3. Pin Layer */}
-             {pins.map(pin => (
-                 <div
-                    key={pin.id}
-                    onMouseDown={(e) => handlePinMouseDown(e, pin.id)}
-                    className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-transform hover:scale-110 z-20 cursor-grab active:cursor-grabbing group`}
-                    style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
+        {/* MAP CANVAS */}
+        <div className="flex-1 relative bg-black rounded-xl border border-white/5 overflow-hidden shadow-2xl order-1 lg:order-2">
+            {/* Toolbar Overlay */}
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-night-800/90 backdrop-blur border border-white/10 rounded-full p-1.5 flex gap-2 shadow-2xl">
+                 <button 
+                    onClick={() => setActiveTool('select')}
+                    className={`p-2.5 rounded-full transition-all ${activeTool === 'select' ? 'bg-brand-600 text-white shadow-lg scale-105' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
+                    title="Select (V)"
                  >
-                    <div className={`relative ${getPinColor(pin.type)} ${selectedId === pin.id ? 'scale-125 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]' : ''} transition-all`}>
-                        <MapPin className={`w-8 h-8 drop-shadow-lg fill-current`} />
-                        
-                        {/* Label on Hover or Select */}
-                        {(selectedId === pin.id || activeTool === 'select') && (
-                             <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                {pin.name}
-                            </div>
-                        )}
-                    </div>
-                 </div>
-             ))}
+                     <MousePointer2 className="w-5 h-5" />
+                 </button>
+                 <div className="w-px bg-white/10 my-1"></div>
+                 <button 
+                    onClick={() => setActiveTool('pin')}
+                    className={`p-2.5 rounded-full transition-all ${activeTool === 'pin' ? 'bg-brand-600 text-white shadow-lg scale-105' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
+                    title="Place Pin (P)"
+                 >
+                     <MapPin className="w-5 h-5" />
+                 </button>
+                 <button 
+                    onClick={() => setActiveTool('polygon')}
+                    className={`p-2.5 rounded-full transition-all ${activeTool === 'polygon' ? 'bg-brand-600 text-white shadow-lg scale-105' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
+                    title="Draw Zone (Z)"
+                 >
+                     <Hexagon className="w-5 h-5" />
+                 </button>
+                 <button 
+                    onClick={() => setActiveTool('polyline')}
+                    className={`p-2.5 rounded-full transition-all ${activeTool === 'polyline' ? 'bg-brand-600 text-white shadow-lg scale-105' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
+                    title="Draw Path (L)"
+                 >
+                     <Waypoints className="w-5 h-5" />
+                 </button>
+            </div>
 
-         </div>
-      </div>
+            {/* Zoom Controls */}
+            <div className="absolute bottom-6 right-6 z-[1000] flex flex-col gap-2">
+                <button onClick={zoomIn} className="p-3 bg-night-800/90 backdrop-blur border border-white/10 text-white rounded-lg hover:bg-white/10 transition-colors shadow-xl">
+                    <Plus className="w-5 h-5" />
+                </button>
+                <button onClick={zoomOut} className="p-3 bg-night-800/90 backdrop-blur border border-white/10 text-white rounded-lg hover:bg-white/10 transition-colors shadow-xl">
+                    <Minus className="w-5 h-5" />
+                </button>
+            </div>
+
+            {/* Drawing Confirmation Overlay */}
+            {drawPoints.length > 0 && (
+                <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[1000] bg-night-800 border border-brand-500 rounded-lg p-2 flex gap-3 shadow-2xl animate-in slide-in-from-bottom-4">
+                     <button onClick={() => setDrawPoints([])} className="px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/10 rounded flex items-center transition-colors">
+                         <X className="w-3 h-3 mr-1.5" /> Cancel
+                     </button>
+                     <button onClick={finishDrawing} className="px-3 py-1.5 text-xs font-bold bg-brand-600 hover:bg-brand-500 text-white rounded flex items-center shadow-lg transition-colors">
+                         <Check className="w-3 h-3 mr-1.5" /> Finish Drawing
+                     </button>
+                </div>
+            )}
+
+            {/* LEAFLET CONTAINER */}
+            <div 
+                ref={mapContainerRef} 
+                className={`w-full h-full z-0 ${activeTool !== 'select' ? 'cursor-crosshair' : ''}`} 
+                style={{ isolation: 'isolate' }} 
+            />
+        </div>
     </div>
   );
 };

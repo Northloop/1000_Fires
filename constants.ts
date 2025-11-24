@@ -1,4 +1,5 @@
 
+
 import { Camp, EventItem, Shift, Task, User, UserRole, Transaction, Incident, Department, LNTTask, MapLayer, MapPin, CampMember, CampAsset, CampTeam } from "./types";
 
 // Dynamic Context: Users now have memberships instead of a single static role
@@ -294,10 +295,12 @@ export const MOCK_MAP_LAYERS: MapLayer[] = [
   { id: 'l4', name: 'Camping Zones', visible: true, type: 'VECTOR', opacity: 0.5 },
 ];
 
+// Voyageurs National Park (Approx. Kabetogama Peninsula area)
+// Center: 48.4558, -92.8384
 export const MOCK_MAP_PINS: MapPin[] = [
-  { id: 'p1', type: 'camp', x: 30, y: 40, lat: 44.9778, lng: -93.2650, name: 'Camp Entropy', description: 'Sector 4, serving chaos', campId: 'c1' },
-  { id: 'p2', type: 'art', x: 50, y: 50, lat: 44.9780, lng: -93.2660, name: 'The Effigy', description: 'Main Field' },
-  { id: 'p3', type: 'medical', x: 20, y: 80, lat: 44.9750, lng: -93.2700, name: 'Ranger Station 3', description: 'South Road' },
-  { id: 'p4', type: 'camp', x: 70, y: 30, lat: 44.9800, lng: -93.2600, name: 'Bass Haven', description: 'Deep Woods', campId: 'c2' },
-  { id: 'p5', type: 'art', x: 80, y: 60, lat: 44.9790, lng: -93.2550, name: 'Temple of Atonement', description: 'North Field' },
+  { id: 'p1', type: 'camp', x: 30, y: 40, lat: 48.4560, lng: -92.8380, name: 'Camp Entropy', description: 'Sector 4, serving chaos', campId: 'c1' },
+  { id: 'p2', type: 'art', x: 50, y: 50, lat: 48.4558, lng: -92.8384, name: 'The Effigy', description: 'Main Field' },
+  { id: 'p3', type: 'medical', x: 20, y: 80, lat: 48.4540, lng: -92.8400, name: 'Ranger Station 3', description: 'South Road' },
+  { id: 'p4', type: 'camp', x: 70, y: 30, lat: 48.4570, lng: -92.8360, name: 'Bass Haven', description: 'Deep Woods', campId: 'c2' },
+  { id: 'p5', type: 'art', x: 80, y: 60, lat: 48.4565, lng: -92.8350, name: 'Temple of Atonement', description: 'North Field' },
 ];
